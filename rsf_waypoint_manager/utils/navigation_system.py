@@ -4,6 +4,7 @@ import rclpy
 from nav2_simple_commander.robot_navigator import TaskResult
 from std_srvs.srv import Trigger
 
+from rsf_waypoint_manager.utils.section_settings import SectionSettings
 from rsf_waypoint_manager.utils.waypoint_data import to_pose_stamped
 
 
@@ -28,6 +29,7 @@ class WaypointSystem:
         self.pending_resume = False
         self.pending_next_waypoint = False
         self.pending_previous_waypoint = False
+        self.sections = SectionSettings(node, waypoints)
         node.create_service(Trigger, '~/start', self.on_start)
         node.create_service(Trigger, '~/start_waypoint_nav', self.on_start)
         node.create_service(Trigger, '~/pause', self.on_pause)
@@ -92,6 +94,8 @@ class WaypointSystem:
             if self.state == State.RUNNING:
                 if self.node.isTaskComplete():
                     self.handle_result()
+                else:
+                    self.sections.apply(self.start_index + self.current_waypoint_index())
             else:
                 rclpy.spin_once(self.node, timeout_sec=0.1)
             self.process_requests()
@@ -117,6 +121,7 @@ class WaypointSystem:
     def handle_result(self):
         pause_requested = self.pause_requested
         self.pause_requested = False
+        self.sections.apply(None)
 
         if self.node.getResult() == TaskResult.SUCCEEDED:
             if (self.goal_end_index < len(self.waypoints) - 1 and
@@ -156,6 +161,8 @@ class WaypointSystem:
              if self.waypoints[waypoint_index]['stop']),
             len(self.waypoints) - 1)
         self.node.feedback = None
+        self.sections.fetch_defaults()
+        self.sections.apply(index)
         stamp = self.node.get_clock().now().to_msg()
         poses = [
             to_pose_stamped(waypoint, stamp)

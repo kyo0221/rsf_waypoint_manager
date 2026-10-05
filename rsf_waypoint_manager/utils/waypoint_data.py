@@ -19,13 +19,18 @@ def load_waypoints(path):
         missing = [key for key in ('x', 'y') if key not in waypoint]
         if missing:
             raise ValueError(f'waypoint {waypoint_id} is missing required keys: {missing}')
-        waypoints.append({
+        loaded = {
             'x': float(waypoint['x']),
             'y': float(waypoint['y']),
             'yaw': float(waypoint.get('yaw', 0.0)),
             'radius': float(waypoint.get('radius', 1.0)),
             'stop': bool(waypoint.get('stop', False)),
-        })
+        }
+        if 'speed_limit' in waypoint:
+            loaded['speed_limit'] = float(waypoint['speed_limit'])
+        if 'parameters' in waypoint:
+            loaded['parameters'] = dict(waypoint['parameters'])
+        waypoints.append(loaded)
     return waypoints
 
 
