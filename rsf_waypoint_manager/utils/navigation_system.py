@@ -77,10 +77,6 @@ class WaypointSystem:
             response.message = 'not stopped at a stop waypoint'
         return response
 
-    def request_next_waypoint(self):
-        if self.state == State.STOPPED:
-            self.pending_next_waypoint = True
-
     def on_previous_waypoint(self, request, response):
         response.success = self.state == State.STOPPED and self.start_index > 0
         if response.success:

@@ -10,20 +10,14 @@ from rsf_waypoint_manager.utils.waypoint_data import save_waypoints
 
 class WaypointEditor:
 
-    def __init__(self, node, waypoints, waypoints_file, visualizer, system):
+    def __init__(self, node, waypoints, waypoints_file, visualizer):
         self.node = node
         self.waypoints = waypoints
         self.waypoints_file = waypoints_file
         self.visualizer = visualizer
-        self.system = system
         self.server_node = rclpy.create_node('waypoint_editor', use_global_arguments=False)
         rclpy.get_global_executor().add_node(self.server_node)
         self.server = InteractiveMarkerServer(self.server_node, 'waypoint_editor')
-        self.menu = MenuHandler()
-        self.menu.insert('Add waypoint after', callback=self.add_waypoint)
-        self.menu.insert('Set as stop waypoint', callback=self.set_stop)
-        self.menu.insert('Clear stop waypoint', callback=self.clear_stop)
-        self.menu.insert('Next waypoint', callback=self.next_waypoint)
         self.drag_state = {}
         node.create_service(Trigger, '~/save_waypoint', self.save)
         self.refresh()
@@ -34,7 +28,13 @@ class WaypointEditor:
         for waypoint_id, waypoint in enumerate(self.waypoints):
             marker = self.visualizer.create_marker(waypoint, waypoint_id)
             self.server.insert(marker, feedback_callback=self.on_feedback)
-            self.menu.apply(self.server, marker.name)
+            menu = MenuHandler()
+            menu.insert('Add waypoint', callback=self.add_waypoint)
+            menu.insert('Remove waypoint', callback=self.remove_waypoint)
+            stop = menu.insert('Stop waypoint', callback=self.toggle_stop)
+            menu.setCheckState(
+                stop, MenuHandler.CHECKED if waypoint['stop'] else MenuHandler.UNCHECKED)
+            menu.apply(self.server, marker.name)
         self.server.applyChanges()
 
     def on_feedback(self, feedback):
@@ -82,14 +82,14 @@ class WaypointEditor:
         })
         self.refresh()
 
-    def set_stop(self, feedback):
-        waypoint_id = int(feedback.marker_name.split('_')[-1])
-        self.waypoints[waypoint_id]['stop'] = True
-        self.refresh()
+    def remove_waypoint(self, feedback):
+        if len(self.waypoints) > 1:
+            del self.waypoints[int(feedback.marker_name.split('_')[-1])]
+            self.refresh()
 
-    def clear_stop(self, feedback):
-        waypoint_id = int(feedback.marker_name.split('_')[-1])
-        self.waypoints[waypoint_id]['stop'] = False
+    def toggle_stop(self, feedback):
+        waypoint = self.waypoints[int(feedback.marker_name.split('_')[-1])]
+        waypoint['stop'] = not waypoint['stop']
         self.refresh()
 
     def save(self, request, response):
@@ -98,6 +98,3 @@ class WaypointEditor:
         response.message = f'saved {len(self.waypoints)} waypoints to {self.waypoints_file}'
         self.node.get_logger().info(response.message)
         return response
-
-    def next_waypoint(self, feedback):
-        self.system.request_next_waypoint()

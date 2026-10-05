@@ -18,7 +18,7 @@ class WaypointCore(BasicNavigator):
         self.visualizer = WaypointVisualizer(self)
         self.system = WaypointSystem(self, self.waypoints)
         self.editor = WaypointEditor(
-            self, self.waypoints, self.waypoints_file, self.visualizer, self.system)
+            self, self.waypoints, self.waypoints_file, self.visualizer)
 
     def run(self):
         self.system.run()
