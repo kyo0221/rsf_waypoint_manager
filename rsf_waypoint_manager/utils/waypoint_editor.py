@@ -1,6 +1,8 @@
 import math
 
+import rclpy
 from interactive_markers import InteractiveMarkerServer, MenuHandler
+from std_srvs.srv import Trigger
 from visualization_msgs.msg import InteractiveMarkerFeedback
 
 from rsf_waypoint_manager.utils.waypoint_data import save_waypoints
@@ -14,14 +16,16 @@ class WaypointEditor:
         self.waypoints_file = waypoints_file
         self.visualizer = visualizer
         self.system = system
-        self.server = InteractiveMarkerServer(node, 'waypoint_editor')
+        self.server_node = rclpy.create_node('waypoint_editor', use_global_arguments=False)
+        rclpy.get_global_executor().add_node(self.server_node)
+        self.server = InteractiveMarkerServer(self.server_node, 'waypoint_editor')
         self.menu = MenuHandler()
         self.menu.insert('Add waypoint after', callback=self.add_waypoint)
         self.menu.insert('Set as stop waypoint', callback=self.set_stop)
         self.menu.insert('Clear stop waypoint', callback=self.clear_stop)
-        self.menu.insert('Save waypoints', callback=self.save)
         self.menu.insert('Next waypoint', callback=self.next_waypoint)
         self.drag_state = {}
+        node.create_service(Trigger, '~/save_waypoint', self.save)
         self.refresh()
 
     def refresh(self):
@@ -88,9 +92,12 @@ class WaypointEditor:
         self.waypoints[waypoint_id]['stop'] = False
         self.refresh()
 
-    def save(self, feedback):
+    def save(self, request, response):
         save_waypoints(self.waypoints_file, self.waypoints)
-        self.node.get_logger().info(f'saved waypoints to {self.waypoints_file}')
+        response.success = True
+        response.message = f'saved {len(self.waypoints)} waypoints to {self.waypoints_file}'
+        self.node.get_logger().info(response.message)
+        return response
 
     def next_waypoint(self, feedback):
         self.system.request_next_waypoint()

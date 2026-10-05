@@ -30,15 +30,11 @@ class WaypointVisualizer:
         marker.pose.orientation.z, marker.pose.orientation.w = yaw_to_quaternion(
             waypoint['yaw'])
 
-        display_control = InteractiveMarkerControl()
-        display_control.name = 'display'
-        display_control.interaction_mode = InteractiveMarkerControl.NONE
-        display_control.always_visible = True
-        display_control.markers = self.create_markers(waypoint, waypoint_id)
-        marker.controls.append(display_control)
-
         plane_control = self.make_vertical_axis_control(
             'move', InteractiveMarkerControl.MOVE_PLANE, 'Drag to move waypoint')
+        plane_control.orientation_mode = InteractiveMarkerControl.INHERIT
+        plane_control.always_visible = True
+        plane_control.markers = self.create_markers(waypoint, waypoint_id)
         marker.controls.append(plane_control)
 
         rotate_control = self.make_vertical_axis_control(
