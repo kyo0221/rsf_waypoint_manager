@@ -13,12 +13,14 @@ class WaypointCore(BasicNavigator):
     def __init__(self):
         super().__init__(node_name='waypoint_navigator')
         self.declare_parameter('waypoints_file', '')
+        self.declare_parameter('profiles_file', '')
         self.waypoints_file = self.get_parameter('waypoints_file').value
         self.waypoints = load_waypoints(self.waypoints_file)
         self.visualizer = WaypointVisualizer(self)
-        self.system = WaypointSystem(self, self.waypoints)
+        self.system = WaypointSystem(
+            self, self.waypoints, self.get_parameter('profiles_file').value)
         self.editor = WaypointEditor(
-            self, self.waypoints, self.waypoints_file, self.visualizer)
+            self, self.waypoints, self.waypoints_file, self.visualizer, self.system.profiles)
 
     def run(self):
         self.system.run()

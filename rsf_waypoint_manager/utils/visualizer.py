@@ -77,7 +77,7 @@ class WaypointVisualizer:
         label.scale.x = label.scale.y = label.scale.z = 1.0
         label.color.r = label.color.g = label.color.b = label.color.a = 1.0
         label.pose.position.z = 1.5
-        label.text = str(waypoint_id)
+        label.text = f"{waypoint_id} {waypoint['profile']}" if 'profile' in waypoint else str(waypoint_id)
         markers.append(label)
         return markers
 

@@ -16,6 +16,7 @@ def generate_launch_description():
         default_value=os.path.join(
             waypoint_manager_dir, 'waypoints', 'tsudanuma2-3_wp.yaml'),
     )
+    profiles_file_arg = DeclareLaunchArgument('profiles_file', default_value='')
     use_sim_time_arg = DeclareLaunchArgument('use_sim_time', default_value='true')
 
     waypoint_navigator_node = Node(
@@ -24,6 +25,7 @@ def generate_launch_description():
         name='waypoint_navigator',
         parameters=[{
             'waypoints_file': LaunchConfiguration('waypoints_file'),
+            'profiles_file': LaunchConfiguration('profiles_file'),
             'use_sim_time': LaunchConfiguration('use_sim_time'),
         }],
         output='screen',
@@ -31,6 +33,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         waypoints_file_arg,
+        profiles_file_arg,
         use_sim_time_arg,
         waypoint_navigator_node,
     ])

@@ -10,11 +10,12 @@ from rsf_waypoint_manager.utils.waypoint_data import save_waypoints
 
 class WaypointEditor:
 
-    def __init__(self, node, waypoints, waypoints_file, visualizer):
+    def __init__(self, node, waypoints, waypoints_file, visualizer, profiles):
         self.node = node
         self.waypoints = waypoints
         self.waypoints_file = waypoints_file
         self.visualizer = visualizer
+        self.profiles = profiles
         self.server_node = rclpy.create_node('waypoint_editor', use_global_arguments=False)
         rclpy.get_global_executor().add_node(self.server_node)
         self.server = InteractiveMarkerServer(self.server_node, 'waypoint_editor')
@@ -34,6 +35,14 @@ class WaypointEditor:
             stop = menu.insert('Stop waypoint', callback=self.toggle_stop)
             menu.setCheckState(
                 stop, MenuHandler.CHECKED if waypoint['stop'] else MenuHandler.UNCHECKED)
+            profile_menu = menu.insert(f'Profile: {self.profiles.profile_for(waypoint_id)}')
+            explicit = waypoint.get('profile')
+            for name in [None] + list(self.profiles.profiles):
+                entry = menu.insert(
+                    name or 'Inherit', parent=profile_menu,
+                    callback=lambda feedback, name=name: self.set_profile(feedback, name))
+                menu.setCheckState(
+                    entry, MenuHandler.CHECKED if name == explicit else MenuHandler.UNCHECKED)
             menu.apply(self.server, marker.name)
         self.server.applyChanges()
 
@@ -90,6 +99,14 @@ class WaypointEditor:
     def toggle_stop(self, feedback):
         waypoint = self.waypoints[int(feedback.marker_name.split('_')[-1])]
         waypoint['stop'] = not waypoint['stop']
+        self.refresh()
+
+    def set_profile(self, feedback, name):
+        waypoint = self.waypoints[int(feedback.marker_name.split('_')[-1])]
+        if name is None:
+            waypoint.pop('profile', None)
+        else:
+            waypoint['profile'] = name
         self.refresh()
 
     def save(self, request, response):

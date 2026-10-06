@@ -1,10 +1,15 @@
 from enum import Enum
+import math
 
 import rclpy
 from nav2_simple_commander.robot_navigator import TaskResult
+from rclpy.qos import DurabilityPolicy, QoSProfile
+from rclpy.time import Time
+from std_msgs.msg import String
 from std_srvs.srv import Trigger
+from tf2_ros import Buffer, TransformListener
 
-from rsf_waypoint_manager.utils.section_settings import SectionSettings
+from rsf_waypoint_manager.utils.profile_manager import ProfileManager
 from rsf_waypoint_manager.utils.waypoint_data import to_pose_stamped
 
 
@@ -17,7 +22,7 @@ class State(Enum):
 
 class WaypointSystem:
 
-    def __init__(self, node, waypoints):
+    def __init__(self, node, waypoints, profiles_file):
         self.node = node
         self.waypoints = waypoints
         self.state = State.IDLE
@@ -29,7 +34,14 @@ class WaypointSystem:
         self.pending_resume = False
         self.pending_next_waypoint = False
         self.pending_previous_waypoint = False
-        self.sections = SectionSettings(node, waypoints)
+        self.entered_goal = False
+        self.result = 'idle'
+        self.status = None
+        self.status_pub = node.create_publisher(
+            String, '~/status', QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, node)
+        self.profiles = ProfileManager(node, waypoints, profiles_file)
         node.create_service(Trigger, '~/start', self.on_start)
         node.create_service(Trigger, '~/start_waypoint_nav', self.on_start)
         node.create_service(Trigger, '~/pause', self.on_pause)
@@ -60,14 +72,10 @@ class WaypointSystem:
     def on_resume(self, request, response):
         response.success = self.state == State.PAUSED
         if response.success:
-            self.request_resume()
+            self.pending_resume = True
         else:
             response.message = 'not paused' if self.state == State.RUNNING else 'not running'
         return response
-
-    def request_resume(self):
-        if self.state == State.PAUSED:
-            self.pending_resume = True
 
     def on_next_waypoint(self, request, response):
         response.success = self.state == State.STOPPED
@@ -91,10 +99,27 @@ class WaypointSystem:
                 if self.node.isTaskComplete():
                     self.handle_result()
                 else:
-                    self.sections.apply(self.start_index + self.current_waypoint_index())
+                    index = self.start_index + self.current_waypoint_index()
+                    self.profiles.apply(self.profiles.profile_for(index))
+                    self.check_entered(index)
             else:
                 rclpy.spin_once(self.node, timeout_sec=0.1)
             self.process_requests()
+            self.publish_status()
+
+    def publish_status(self):
+        total = len(self.waypoints)
+        if self.state == State.RUNNING:
+            status = f'running {self.start_index + self.current_waypoint_index()} {total}'
+        elif self.state == State.STOPPED:
+            status = f'stopped {self.goal_end_index} {total}'
+        elif self.state == State.PAUSED:
+            status = f'paused {self.start_index} {total}'
+        else:
+            status = f'{self.result} {self.start_index + self.current_waypoint_index()} {total}'
+        if status != self.status:
+            self.status = status
+            self.status_pub.publish(String(data=status))
 
     def process_requests(self):
         if self.pending_start:
@@ -114,12 +139,37 @@ class WaypointSystem:
             self.pending_previous_waypoint = False
             self.send_from(max(0, self.start_index - 1))
 
+    def robot_position(self):
+        try:
+            transform = self.tf_buffer.lookup_transform('map', 'base_footprint', Time())
+        except Exception:
+            return None
+        return transform.transform.translation.x, transform.transform.translation.y
+
+    def check_entered(self, index):
+        if self.entered_goal or self.pause_requested:
+            return
+        position = self.robot_position()
+        if position is None:
+            return
+        waypoint = self.waypoints[index]
+        if math.hypot(waypoint['x'] - position[0], waypoint['y'] - position[1]) > waypoint['radius']:
+            return
+        self.node.get_logger().info(f'entered waypoint {index}')
+        if index < self.goal_end_index:
+            self.send_from(index + 1)
+        else:
+            self.entered_goal = True
+            self.node.cancelTask()
+
     def handle_result(self):
         pause_requested = self.pause_requested
         self.pause_requested = False
-        self.sections.apply(None)
+        entered_goal = self.entered_goal
+        self.entered_goal = False
+        self.profiles.reset()
 
-        if self.node.getResult() == TaskResult.SUCCEEDED:
+        if entered_goal or self.node.getResult() == TaskResult.SUCCEEDED:
             if (self.goal_end_index < len(self.waypoints) - 1 and
                     self.waypoints[self.goal_end_index]['stop']):
                 self.start_index = self.goal_end_index + 1
@@ -128,6 +178,7 @@ class WaypointSystem:
                 self.state = State.STOPPED
             else:
                 self.node.get_logger().info('finished')
+                self.result = 'finished'
                 self.state = State.IDLE
         elif pause_requested:
             self.start_index += self.current_waypoint_index()
@@ -135,6 +186,7 @@ class WaypointSystem:
             self.state = State.PAUSED
         else:
             self.node.get_logger().warn('waypoint following failed, stopping')
+            self.result = 'failed'
             self.state = State.IDLE
 
     def current_waypoint_index(self):
@@ -148,17 +200,19 @@ class WaypointSystem:
     def send_from(self, index):
         if not self.node.follow_waypoints_client.server_is_ready():
             self.node.get_logger().error('follow_waypoints action server not available, stopping')
+            self.result = 'failed'
             self.state = State.IDLE
             return
 
         self.start_index = index
+        self.entered_goal = False
         self.goal_end_index = next(
             (waypoint_index for waypoint_index in range(index, len(self.waypoints))
              if self.waypoints[waypoint_index]['stop']),
             len(self.waypoints) - 1)
         self.node.feedback = None
-        self.sections.fetch_defaults()
-        self.sections.apply(index)
+        self.profiles.fetch_defaults()
+        self.profiles.apply(self.profiles.profile_for(index))
         stamp = self.node.get_clock().now().to_msg()
         poses = [
             to_pose_stamped(waypoint, stamp)
@@ -166,6 +220,7 @@ class WaypointSystem:
         ]
         if not self.node.followWaypoints(poses):
             self.node.get_logger().error('waypoint goal was rejected')
+            self.result = 'failed'
             self.state = State.IDLE
             return
         self.state = State.RUNNING

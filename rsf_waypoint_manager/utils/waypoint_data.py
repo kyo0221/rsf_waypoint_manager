@@ -26,10 +26,13 @@ def load_waypoints(path):
             'radius': float(waypoint.get('radius', 1.0)),
             'stop': bool(waypoint.get('stop', False)),
         }
-        if 'speed_limit' in waypoint:
-            loaded['speed_limit'] = float(waypoint['speed_limit'])
-        if 'parameters' in waypoint:
-            loaded['parameters'] = dict(waypoint['parameters'])
+        removed = [key for key in ('speed_limit', 'parameters') if key in waypoint]
+        if removed:
+            raise ValueError(
+                f'waypoint {waypoint_id} uses removed keys {removed}; '
+                'define a profile in the profiles file and set "profile"')
+        if 'profile' in waypoint:
+            loaded['profile'] = str(waypoint['profile'])
         waypoints.append(loaded)
     return waypoints
 
