@@ -3,6 +3,7 @@ import math
 
 import rclpy
 from nav2_simple_commander.robot_navigator import TaskResult
+from rclpy.parameter import Parameter
 from rclpy.qos import DurabilityPolicy, QoSProfile
 from rclpy.time import Time
 from std_msgs.msg import String
@@ -11,6 +12,11 @@ from tf2_ros import Buffer, TransformListener
 
 from rsf_waypoint_manager.utils.profile_manager import ProfileManager
 from rsf_waypoint_manager.utils.waypoint_data import to_pose_stamped
+
+PLANNER = '/planner_server'
+GOAL_TOLERANCE_PARAMETER = 'GridBased.tolerance'
+GOAL_TOLERANCE_MARGIN = 0.5
+MIN_GOAL_TOLERANCE = 0.125
 
 
 class State(Enum):
@@ -189,6 +195,12 @@ class WaypointSystem:
             self.result = 'failed'
             self.state = State.IDLE
 
+    def set_goal_tolerance(self, radius):
+        tolerance = max(radius - GOAL_TOLERANCE_MARGIN, MIN_GOAL_TOLERANCE)
+        self.profiles.client(PLANNER).set_parameters(
+            [Parameter(GOAL_TOLERANCE_PARAMETER, value=tolerance).to_parameter_msg()],
+            callback=self.profiles.on_set(PLANNER))
+
     def current_waypoint_index(self):
         feedback = self.node.getFeedback()
         if feedback is None:
@@ -213,6 +225,7 @@ class WaypointSystem:
         self.node.feedback = None
         self.profiles.fetch_defaults()
         self.profiles.apply(self.profiles.profile_for(index))
+        self.set_goal_tolerance(self.waypoints[index]['radius'])
         stamp = self.node.get_clock().now().to_msg()
         poses = [
             to_pose_stamped(waypoint, stamp)
