@@ -41,6 +41,7 @@ class WaypointSystem:
         self.pending_next_waypoint = False
         self.pending_previous_waypoint = False
         self.entered_goal = False
+        self.entered_index = -1
         self.result = 'idle'
         self.status = None
         self.status_pub = node.create_publisher(
@@ -106,6 +107,9 @@ class WaypointSystem:
                     self.handle_result()
                 else:
                     index = self.start_index + self.current_waypoint_index()
+                    if index > self.entered_index + 1 and not self.entered_goal:
+                        self.handle_skipped(self.entered_index + 1)
+                        continue
                     self.profiles.apply(self.profiles.profile_for(index))
                     self.check_entered(index)
             else:
@@ -162,11 +166,23 @@ class WaypointSystem:
         if math.hypot(waypoint['x'] - position[0], waypoint['y'] - position[1]) > waypoint['radius']:
             return
         self.node.get_logger().info(f'entered waypoint {index}')
+        self.entered_index = index
         if index < self.goal_end_index:
             self.send_from(index + 1)
         else:
             self.entered_goal = True
             self.node.cancelTask()
+
+    def handle_skipped(self, index):
+        position = self.robot_position()
+        waypoint = self.waypoints[index]
+        if position is not None and math.hypot(
+                waypoint['x'] - position[0], waypoint['y'] - position[1]) <= waypoint['radius']:
+            self.node.get_logger().info(f'entered waypoint {index}')
+            self.entered_index = index
+            return
+        self.node.get_logger().warn(f'waypoint {index} was skipped by the follower, resending')
+        self.send_from(index)
 
     def handle_result(self):
         pause_requested = self.pause_requested
@@ -218,6 +234,7 @@ class WaypointSystem:
 
         self.start_index = index
         self.entered_goal = False
+        self.entered_index = index - 1
         self.goal_end_index = next(
             (waypoint_index for waypoint_index in range(index, len(self.waypoints))
              if self.waypoints[waypoint_index]['stop']),

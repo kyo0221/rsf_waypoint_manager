@@ -4,7 +4,7 @@ from nav2_msgs.msg import SpeedLimit
 from rclpy.parameter import Parameter
 from rclpy.parameter_client import AsyncParameterClient
 from rclpy.qos import DurabilityPolicy, QoSProfile
-from std_msgs.msg import String
+from std_msgs.msg import Float32, String
 
 DEFAULT = 'default'
 
@@ -44,6 +44,24 @@ class ProfileManager:
         self.clients = {}
         self.defaults = {}
         self.current = None
+        self.override = 0.0
+        node.create_subscription(Float32, '~/speed_override', self.on_override, 10)
+        node.create_timer(0.1, self.publish_speed)
+
+    def on_override(self, msg):
+        self.override = msg.data
+
+    def publish_speed(self):
+        if self.current is None:
+            return
+        limit = self.profiles[self.current]['speed_limit']
+        if self.override > 0.0:
+            limit = self.override if limit <= 0.0 else min(limit, self.override)
+        msg = SpeedLimit()
+        msg.header.stamp = self.node.get_clock().now().to_msg()
+        msg.percentage = False
+        msg.speed_limit = limit
+        self.speed_pub.publish(msg)
 
     def profile_for(self, index):
         for waypoint in reversed(self.waypoints[:index + 1]):
@@ -83,12 +101,7 @@ class ProfileManager:
         profile = self.profiles[name]
         previous = self.profiles[self.current]['parameters'] if self.current else {}
         self.current = name
-
-        msg = SpeedLimit()
-        msg.header.stamp = self.node.get_clock().now().to_msg()
-        msg.percentage = False
-        msg.speed_limit = profile['speed_limit']
-        self.speed_pub.publish(msg)
+        self.publish_speed()
         self.profile_pub.publish(String(data=name))
 
         target = {

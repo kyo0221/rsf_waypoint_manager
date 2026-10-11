@@ -12,6 +12,11 @@ A waypoint may carry `profile: <name>`. Profiles are defined in the file given b
 The named profile is applied while heading to that waypoint and stays active until a waypoint
 names another one; `default` restores the original values, as does any stop of the navigation.
 The active name is published on `~/profile` and the speed limit on `/speed_limit`.
+Any node parameter can be switched this way, e.g. `/rsf_localization_filter: {use_mcl: true}` (AMCL in GNSS gaps)
+or `/queue_guard: {enabled: true}`.
+
+`queue_guard` (started by the navigation launch) watches the lane ahead on the local costmap while its `enabled`
+parameter is true and limits the speed through `~/speed_override` so the robot stops behind a queue instead of overtaking.
 In RViz, right-click a waypoint marker and pick a name under `Profile` (`Inherit` removes the
 key); `~/save_waypoint` writes it to the file.
 

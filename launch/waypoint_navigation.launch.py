@@ -31,9 +31,21 @@ def generate_launch_description():
         output='screen',
     )
 
+    queue_guard_node = Node(
+        package='rsf_waypoint_manager',
+        executable='queue_guard',
+        name='queue_guard',
+        parameters=[{
+            'waypoints_file': LaunchConfiguration('waypoints_file'),
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
+        }],
+        output='screen',
+    )
+
     return LaunchDescription([
         waypoints_file_arg,
         profiles_file_arg,
         use_sim_time_arg,
         waypoint_navigator_node,
+        queue_guard_node,
     ])
