@@ -226,7 +226,7 @@ class WaypointSystem:
         return index if 0 <= index < remaining else 0
 
     def send_from(self, index):
-        if not self.node.follow_waypoints_client.server_is_ready():
+        if not self.node.follow_waypoints_client.wait_for_server(timeout_sec=5.0):
             self.node.get_logger().error('follow_waypoints action server not available, stopping')
             self.result = 'failed'
             self.state = State.IDLE
