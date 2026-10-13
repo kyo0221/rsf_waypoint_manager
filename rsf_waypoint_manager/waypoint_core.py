@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 import rclpy
-from nav2_simple_commander.robot_navigator import BasicNavigator
 
 from rsf_waypoint_manager.utils.navigation_system import WaypointSystem
+from rsf_waypoint_manager.utils.waypoint_follower_client import WaypointFollowerClient
 from rsf_waypoint_manager.utils.waypoint_editor import WaypointEditor
 from rsf_waypoint_manager.utils.visualizer import WaypointVisualizer
 from rsf_waypoint_manager.utils.waypoint_data import load_waypoints
 
 
-class WaypointCore(BasicNavigator):
+class WaypointCore(WaypointFollowerClient):
 
     def __init__(self):
-        super().__init__(node_name='waypoint_navigator')
+        super().__init__('waypoint_navigator')
         self.declare_parameter('waypoints_file', '')
         self.declare_parameter('profiles_file', '')
         self.waypoints_file = self.get_parameter('waypoints_file').value
