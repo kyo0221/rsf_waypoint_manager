@@ -87,8 +87,8 @@ waypoints:
   radius: 2.5
   stop: false
   profile: pillar_area_mcl
-- x: 171.082
-  y: 30.067
+- x: 171.70
+  y: 29.41
   yaw: -2.3957178960704573
   radius: 2.5
   stop: false
@@ -329,6 +329,7 @@ waypoints:
   yaw: -2.414
   radius: 1.3
   stop: false
+  profile: roadside_following
 - x: -39.553
   y: -317.824
   yaw: -2.448
@@ -384,6 +385,7 @@ waypoints:
   yaw: -2.993
   radius: 1.3
   stop: false
+  profile: roadside
 - x: -119.613
   y: -381.966
   yaw: 3.057
@@ -769,6 +771,7 @@ waypoints:
   yaw: 0.691
   radius: 1.3
   stop: false
+  profile: roadside_following
 - x: -99.487
   y: -368.443
   yaw: 1.094
@@ -839,6 +842,7 @@ waypoints:
   yaw: 0.71
   radius: 1.3
   stop: false
+  profile: roadside
 - x: -15.065
   y: -296.359
   yaw: 0.71
