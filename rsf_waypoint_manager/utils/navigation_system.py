@@ -114,8 +114,9 @@ class WaypointSystem:
                         self.handle_skipped(self.entered_index + 1)
                         continue
                     self.profiles.apply(self.profiles.profile_for(index))
-                    self.profiles.approach = self.approach_speed()
-                    self.check_entered(index)
+                    position = self.robot_position()
+                    self.profiles.approach = self.approach_speed(position)
+                    self.check_entered(index, position)
             else:
                 self.profiles.approach = 0.0
                 rclpy.spin_once(self.node, timeout_sec=0.1)
@@ -161,8 +162,7 @@ class WaypointSystem:
             return None
         return transform.transform.translation.x, transform.transform.translation.y
 
-    def approach_speed(self):
-        position = self.robot_position()
+    def approach_speed(self, position):
         if position is None:
             return 0.0
         waypoint = self.waypoints[self.goal_end_index]
@@ -171,10 +171,9 @@ class WaypointSystem:
             return 0.0
         return max(STOP_MIN_SPEED, math.sqrt(2.0 * STOP_DECELERATION * max(distance, 0.0)))
 
-    def check_entered(self, index):
+    def check_entered(self, index, position):
         if self.entered_goal or self.pause_requested:
             return
-        position = self.robot_position()
         if position is None:
             return
         waypoint = self.waypoints[index]
