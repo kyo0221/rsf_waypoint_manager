@@ -3,6 +3,7 @@ import math
 import numpy as np
 import rclpy
 import yaml
+from map_msgs.msg import OccupancyGridUpdate
 from nav_msgs.msg import OccupancyGrid, Path
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile
@@ -39,6 +40,7 @@ class QueueGuard(Node):
         transient = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.create_subscription(Path, '/plan', self.on_plan, 1)
         self.create_subscription(OccupancyGrid, '/local_costmap/costmap', self.on_local, 1)
+        self.create_subscription(OccupancyGridUpdate, '/local_costmap/costmap_updates', self.on_local_update, 10)
         self.create_subscription(OccupancyGrid, '/map', self.on_map, transient)
         self.pub = self.create_publisher(Float32, '/waypoint_navigator/speed_override', 10)
         self.distance_pub = self.create_publisher(Float32, '~/obstacle_distance', 10)
@@ -51,7 +53,14 @@ class QueueGuard(Node):
 
     def on_local(self, msg):
         self.local = msg
-        self.grid = np.frombuffer(msg.data, dtype=np.int8).reshape(msg.info.height, msg.info.width)
+        self.grid = np.frombuffer(msg.data, dtype=np.int8).reshape(msg.info.height, msg.info.width).copy()
+        self.objects = None
+
+    def on_local_update(self, msg):
+        if self.grid is None:
+            return
+        patch = np.frombuffer(msg.data, dtype=np.int8).reshape(msg.height, msg.width)
+        self.grid[msg.y:msg.y + msg.height, msg.x:msg.x + msg.width] = patch
         self.objects = None
 
     def object_mask(self):
