@@ -3,7 +3,10 @@ from nav2_msgs.action import FollowWaypoints
 from nav2_simple_commander.robot_navigator import TaskResult
 import rclpy
 from rclpy.action import ActionClient
+from rclpy.duration import Duration
 from rclpy.node import Node
+
+GOAL_ATTEMPTS = 10
 
 
 class WaypointFollowerClient(Node):
@@ -22,14 +25,20 @@ class WaypointFollowerClient(Node):
         goal_msg = FollowWaypoints.Goal()
         goal_msg.poses = poses
         self.get_logger().info(f'Following {len(goal_msg.poses)} goals....')
-        send_goal_future = self.follow_waypoints_client.send_goal_async(goal_msg, self._feedback)
-        rclpy.spin_until_future_complete(self, send_goal_future)
-        self.goal_handle = send_goal_future.result()
-        if not self.goal_handle.accepted:
-            self.get_logger().error(f'Following {len(poses)} waypoints request was rejected!')
-            return False
-        self.result_future = self.goal_handle.get_result_async()
-        return True
+        for attempt in range(GOAL_ATTEMPTS):
+            send_goal_future = self.follow_waypoints_client.send_goal_async(goal_msg, self._feedback)
+            rclpy.spin_until_future_complete(self, send_goal_future)
+            self.goal_handle = send_goal_future.result()
+            if self.goal_handle.accepted:
+                self.result_future = self.goal_handle.get_result_async()
+                return True
+            self.get_logger().warn(
+                f'Following {len(poses)} waypoints request was rejected, retrying ({attempt + 1})')
+            end = self.get_clock().now() + Duration(seconds=1.0)
+            while self.get_clock().now() < end:
+                rclpy.spin_once(self, timeout_sec=0.1)
+        self.get_logger().error(f'Following {len(poses)} waypoints request was rejected!')
+        return False
 
     def cancelTask(self):
         if self.result_future:
