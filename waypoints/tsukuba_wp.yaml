@@ -86,7 +86,7 @@ waypoints:
   yaw: -2.3957178960704573
   radius: 2.5
   stop: false
-  profile: pillar_area_mcl
+  profile: narrow_mcl
 - x: 171.70
   y: 29.41
   yaw: -2.3957178960704573
@@ -118,7 +118,7 @@ waypoints:
   yaw: 2.2672870915598384
   radius: 2.5
   stop: false
-  profile: lio_area
+  profile: speed_down
 - x: 118.86117553710938
   y: 10.683845520019531
   yaw: -2.3627301202822624
@@ -176,7 +176,7 @@ waypoints:
   yaw: -0.858
   radius: 1.3
   stop: false
-  profile: roadside
+  profile: road_edge_keep
 - x: -52.572
   y: -148.188
   yaw: -0.858
@@ -273,7 +273,7 @@ waypoints:
   yaw: -1.937
   radius: 1.3
   stop: false
-  profile: roadside
+  profile: road_edge_keep
 - x: 17.25
   y: -260.504
   yaw: -1.69
@@ -319,7 +319,7 @@ waypoints:
   yaw: -2.414
   radius: 1.3
   stop: false
-  profile: roadside_following
+  profile: road_edge_keep_following
 - x: -26.795
   y: -306.465
   yaw: -2.414
@@ -385,7 +385,7 @@ waypoints:
   yaw: -2.993
   radius: 1.3
   stop: false
-  profile: roadside
+  profile: road_edge_keep
 - x: -119.613
   y: -381.966
   yaw: 3.057
@@ -651,7 +651,7 @@ waypoints:
   yaw: -2.271
   radius: 1.3
   stop: false
-  profile: roadside_following
+  profile: road_edge_keep_following
 - x: -186.279
   y: -254.224
   yaw: -2.43
@@ -677,7 +677,7 @@ waypoints:
   yaw: -1.7
   radius: 1.3
   stop: false
-  profile: roadside
+  profile: road_edge_keep
 - x: -215.114
   y: -282.154
   yaw: -0.837
@@ -773,7 +773,7 @@ waypoints:
   yaw: 0.691
   radius: 1.3
   stop: false
-  profile: roadside_following
+  profile: road_edge_keep_following
 - x: -99.487
   y: -368.443
   yaw: 1.094
@@ -869,7 +869,7 @@ waypoints:
   yaw: 0.9
   radius: 1.3
   stop: false
-  profile: roadside
+  profile: road_edge_keep
 - x: 16.848
   y: -268.648
   yaw: 1.636
