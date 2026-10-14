@@ -45,6 +45,7 @@ class ProfileManager:
         self.defaults = {}
         self.current = None
         self.override = 0.0
+        self.approach = 0.0
         node.create_subscription(Float32, '~/speed_override', self.on_override, 10)
         node.create_timer(0.1, self.publish_speed)
 
@@ -54,9 +55,8 @@ class ProfileManager:
     def publish_speed(self):
         if self.current is None:
             return
-        limit = self.profiles[self.current]['speed_limit']
-        if self.override > 0.0:
-            limit = self.override if limit <= 0.0 else min(limit, self.override)
+        limits = [v for v in (self.profiles[self.current]['speed_limit'], self.override, self.approach) if v > 0.0]
+        limit = min(limits) if limits else 0.0
         msg = SpeedLimit()
         msg.header.stamp = self.node.get_clock().now().to_msg()
         msg.percentage = False

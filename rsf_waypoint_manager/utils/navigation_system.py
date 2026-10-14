@@ -17,6 +17,9 @@ PLANNER = '/planner_server'
 GOAL_TOLERANCE_PARAMETER = 'GridBased.tolerance'
 GOAL_TOLERANCE_MARGIN = 0.5
 MIN_GOAL_TOLERANCE = 0.125
+STOP_DECELERATION = 0.16
+STOP_MIN_SPEED = 0.2
+STOP_APPROACH_DISTANCE = 3.0
 
 
 class State(Enum):
@@ -111,8 +114,10 @@ class WaypointSystem:
                         self.handle_skipped(self.entered_index + 1)
                         continue
                     self.profiles.apply(self.profiles.profile_for(index))
+                    self.profiles.approach = self.approach_speed()
                     self.check_entered(index)
             else:
+                self.profiles.approach = 0.0
                 rclpy.spin_once(self.node, timeout_sec=0.1)
             self.process_requests()
             self.publish_status()
@@ -155,6 +160,16 @@ class WaypointSystem:
         except Exception:
             return None
         return transform.transform.translation.x, transform.transform.translation.y
+
+    def approach_speed(self):
+        position = self.robot_position()
+        if position is None:
+            return 0.0
+        waypoint = self.waypoints[self.goal_end_index]
+        distance = math.hypot(waypoint['x'] - position[0], waypoint['y'] - position[1]) - waypoint['radius']
+        if distance >= STOP_APPROACH_DISTANCE:
+            return 0.0
+        return max(STOP_MIN_SPEED, math.sqrt(2.0 * STOP_DECELERATION * max(distance, 0.0)))
 
     def check_entered(self, index):
         if self.entered_goal or self.pause_requested:
