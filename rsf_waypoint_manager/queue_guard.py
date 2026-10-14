@@ -32,6 +32,8 @@ class QueueGuard(Node):
                 self.route = [(float(w['x']), float(w['y'])) for w in yaml.safe_load(f)['waypoints']]
         self.plan = []
         self.local = None
+        self.grid = None
+        self.objects = None
         self.static = None
         self.active = False
         transient = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
@@ -49,6 +51,20 @@ class QueueGuard(Node):
 
     def on_local(self, msg):
         self.local = msg
+        self.grid = np.frombuffer(msg.data, dtype=np.int8).reshape(msg.info.height, msg.info.width)
+        self.objects = None
+
+    def object_mask(self):
+        if self.objects is None:
+            lethal = self.grid >= self.get_parameter('lethal').value
+            labels, count = ndimage.label(lethal, structure=np.ones((3, 3)))
+            small = np.zeros(count + 1, dtype=bool)
+            limit = self.get_parameter('max_object_size').value / self.local.info.resolution
+            for k, sl in enumerate(ndimage.find_objects(labels), start=1):
+                if sl is not None and max(sl[0].stop - sl[0].start, sl[1].stop - sl[1].start) <= limit:
+                    small[k] = True
+            self.objects = small[labels]
+        return self.objects
 
     def on_map(self, msg):
         grid = np.array(msg.data, dtype=np.int16).reshape(msg.info.height, msg.info.width)
@@ -109,15 +125,7 @@ class QueueGuard(Node):
         ci = np.floor((lx - g.info.origin.position.x) / g.info.resolution).astype(int)
         cj = np.floor((ly - g.info.origin.position.y) / g.info.resolution).astype(int)
         inside = (ci >= 0) & (ci < g.info.width) & (cj >= 0) & (cj < g.info.height)
-        data = np.array(g.data, dtype=np.int16).reshape(g.info.height, g.info.width)
-        lethal = data >= self.get_parameter('lethal').value
-        labels, count = ndimage.label(lethal, structure=np.ones((3, 3)))
-        small = np.zeros(count + 1, dtype=bool)
-        limit = self.get_parameter('max_object_size').value / g.info.resolution
-        for k, sl in enumerate(ndimage.find_objects(labels), start=1):
-            if sl is not None and max(sl[0].stop - sl[0].start, sl[1].stop - sl[1].start) <= limit:
-                small[k] = True
-        objects = small[labels]
+        objects = self.object_mask()
         hit = np.zeros(ci.shape, dtype=bool)
         hit[inside] = objects[cj[inside], ci[inside]]
         if self.static is not None:
