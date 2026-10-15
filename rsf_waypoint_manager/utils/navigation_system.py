@@ -11,6 +11,7 @@ from std_srvs.srv import Trigger
 from tf2_ros import Buffer, TransformListener
 
 from rsf_waypoint_manager.utils.profile_manager import ProfileManager
+from rsf_waypoint_manager.utils.recovery_log import RecoveryLog
 from rsf_waypoint_manager.utils.waypoint_data import to_pose_stamped
 
 PLANNER = '/planner_server'
@@ -52,6 +53,9 @@ class WaypointSystem:
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, node)
         self.profiles = ProfileManager(node, waypoints, profiles_file)
+        self.max_failures = node.declare_parameter('max_waypoint_failures', 2).value
+        self.failures = {}
+        self.log = RecoveryLog(node, self, node.declare_parameter('event_log_file', '').value)
         node.create_service(Trigger, '~/start', self.on_start)
         node.create_service(Trigger, '~/start_waypoint_nav', self.on_start)
         node.create_service(Trigger, '~/pause', self.on_pause)
@@ -181,6 +185,7 @@ class WaypointSystem:
             return
         self.node.get_logger().info(f'entered waypoint {index}')
         self.entered_index = index
+        self.failures.pop(index, None)
         if index < self.goal_end_index:
             self.send_from(index + 1)
         else:
@@ -194,9 +199,37 @@ class WaypointSystem:
                 waypoint['x'] - position[0], waypoint['y'] - position[1]) <= waypoint['radius']:
             self.node.get_logger().info(f'entered waypoint {index}')
             self.entered_index = index
+            self.failures.pop(index, None)
+            return
+        count = self.record_failure(index)
+        if self.can_give_up(index, count):
+            self.log.write('give_up', index, f'failures {count}')
+            self.entered_index = index
+            self.failures.pop(index, None)
             return
         self.node.get_logger().warn(f'waypoint {index} was skipped by the follower, resending')
         self.send_from(index)
+
+    def record_failure(self, index):
+        count = self.failures.get(index, 0) + 1
+        self.failures[index] = count
+        self.log.write('waypoint_failed', index, f'failures {count}')
+        return count
+
+    def can_give_up(self, index, count):
+        return (self.max_failures > 0 and count >= self.max_failures and
+                not self.waypoints[index]['stop'] and index < len(self.waypoints) - 1)
+
+    def reached(self, index):
+        position = self.robot_position()
+        waypoint = self.waypoints[index]
+        return position is not None and math.hypot(
+            waypoint['x'] - position[0], waypoint['y'] - position[1]) <= waypoint['radius']
+
+    def current_index(self):
+        if self.state != State.RUNNING:
+            return self.start_index
+        return self.start_index + self.current_waypoint_index()
 
     def handle_result(self):
         pause_requested = self.pause_requested
@@ -204,6 +237,15 @@ class WaypointSystem:
         entered_goal = self.entered_goal
         self.entered_goal = False
         self.profiles.reset()
+
+        if (not entered_goal and not pause_requested and
+                self.node.getResult() == TaskResult.SUCCEEDED and
+                not self.reached(self.goal_end_index)):
+            self.record_failure(self.goal_end_index)
+            self.node.get_logger().warn(
+                f'waypoint {self.goal_end_index} was missed by the follower, resending')
+            self.send_from(self.goal_end_index)
+            return
 
         if entered_goal or self.node.getResult() == TaskResult.SUCCEEDED:
             if (self.goal_end_index < len(self.waypoints) - 1 and
