@@ -7,8 +7,6 @@
   <maintainer email="teiruyamashita@icloud.com">kyo0221</maintainer>
   <license>BSD-3-Clause</license>
 
-  <buildtool_depend>ament_python</buildtool_depend>
-
   <exec_depend>ament_index_python</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>interactive_markers</exec_depend>
