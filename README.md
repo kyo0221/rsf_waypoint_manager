@@ -4,6 +4,9 @@ Waypoint navigation, editing, visualization, and recording nodes for the RSF rob
 
 The navigation launch starts `waypoint_core`, which accepts
 `/waypoint_navigator/start` and loads the configured waypoint YAML file.
+`start` begins at the waypoint given by the `start_index` parameter (default 0) and also
+works while paused or stopped, so a run can be resumed from any waypoint
+(`ros2 param set /waypoint_navigator start_index 37` or the RViz waypoint panel).
 
 ## Profiles
 

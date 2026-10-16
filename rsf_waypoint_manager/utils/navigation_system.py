@@ -40,6 +40,7 @@ class WaypointSystem:
         self.goal_end_index = 0
         self.pause_requested = False
         self.pending_start = False
+        self.pending_start_index = 0
         self.pending_pause = False
         self.pending_resume = False
         self.pending_next_waypoint = False
@@ -54,6 +55,7 @@ class WaypointSystem:
         self.tf_listener = TransformListener(self.tf_buffer, node)
         self.profiles = ProfileManager(node, waypoints, profiles_file)
         self.max_failures = node.declare_parameter('max_waypoint_failures', 2).value
+        node.declare_parameter('start_index', 0)
         self.failures = {}
         self.log = RecoveryLog(node, self, node.declare_parameter('event_log_file', '').value)
         node.create_service(Trigger, '~/start', self.on_start)
@@ -64,15 +66,21 @@ class WaypointSystem:
         node.create_service(Trigger, '~/prev_waypoint', self.on_previous_waypoint)
 
     def on_start(self, request, response):
-        if self.state != State.IDLE:
+        index = self.node.get_parameter('start_index').value
+        if self.state == State.RUNNING:
             response.success = False
-            response.message = 'already active'
+            response.message = 'already running'
+        elif not 0 <= index < len(self.waypoints):
+            response.success = False
+            response.message = f'start_index {index} is out of range'
         elif not self.node.follow_waypoints_client.server_is_ready():
             response.success = False
             response.message = 'follow_waypoints action server not available'
         else:
             self.pending_start = True
+            self.pending_start_index = index
             response.success = True
+            response.message = f'starting from waypoint {index}'
         return response
 
     def on_pause(self, request, response):
@@ -144,7 +152,7 @@ class WaypointSystem:
     def process_requests(self):
         if self.pending_start:
             self.pending_start = False
-            self.send_from(0)
+            self.send_from(self.pending_start_index)
         if self.pending_pause:
             self.pending_pause = False
             self.pause_requested = True
