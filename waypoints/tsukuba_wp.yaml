@@ -1,1083 +1,1415 @@
 waypoints:
-- x: 78.543
-  y: 77.5
-  yaw: 0.269
+- x: 24.808
+  y: 3.303
+  yaw: 3.065
   radius: 1.3
   stop: false
-- x: 86.905
-  y: 84.305
-  yaw: 0.785
+- x: 14.834
+  y: 3.982
+  yaw: 3.068
   radius: 1.3
   stop: false
-- x: 95.693
-  y: 91.493
-  yaw: 0.675
+- x: 4.87
+  y: 4.753
+  yaw: 3.037
   radius: 1.3
   stop: false
-- x: 104.7
-  y: 99.559
-  yaw: 1.055
+- x: -5.098
+  y: 5.493
+  yaw: 3.043
   radius: 1.3
   stop: false
-- x: 114.565
-  y: 102.7
-  yaw: 0.0
+- x: -10.346
+  y: 6.214
+  yaw: 2.913
   radius: 1.3
   stop: false
-- x: 123.851
-  y: 96.149
-  yaw: -0.636
+- x: -14.74
+  y: 7.845
+  yaw: 2.617
   radius: 1.3
   stop: false
-- x: 134.972
-  y: 96.572
-  yaw: 0.414
+- x: -17.927
+  y: 11.13
+  yaw: 2.044
   radius: 1.3
   stop: false
-- x: 144.124
-  y: 101.524
-  yaw: 0.458
+- x: -19.109
+  y: 16.318
+  yaw: 1.677
   radius: 1.3
   stop: false
-- x: 154.395
-  y: 105.7
-  yaw: 0.207
+- x: -19.985
+  y: 21.393
+  yaw: 1.954
   radius: 1.3
   stop: false
-- x: 163.39
-  y: 112.99
-  yaw: 1.049
+- x: -22.976
+  y: 25.104
+  yaw: 2.583
+  radius: 1.3
+  stop: false
+- x: -25.453
+  y: 26.047
+  yaw: 2.95
+  radius: 1.3
+  stop: false
+- x: -32.763
+  y: 26.62
+  yaw: 3.045
+  radius: 1.3
+  stop: false
+- x: -36.861
+  y: 27.373
+  yaw: 2.795
+  radius: 1.3
+  stop: false
+- x: -39.021
+  y: 29.226
+  yaw: 2.42
+  radius: 1.3
+  stop: false
+- x: -41.696
+  y: 30.508
+  yaw: 2.811
+  radius: 1.3
+  stop: false
+- x: -50.986
+  y: 34.106
+  yaw: 2.723
+  radius: 1.3
+  stop: false
+- x: -55.827
+  y: 36.443
+  yaw: 2.87
+  radius: 1.3
+  stop: false
+- x: -60.414
+  y: 36.681
+  yaw: -3.05
   radius: 1.3
   stop: false
   profile: following
-- x: 171.253
-  y: 118.1
-  yaw: -0.26
+- x: -66.628
+  y: 36.16
+  yaw: 2.937
   radius: 1.3
   stop: false
-- x: 179.1
-  y: 110.167
-  yaw: -1.068
+- x: -69.083
+  y: 38.526
+  yaw: 1.748
   radius: 1.3
   stop: false
-- x: 193.815185546875
-  y: 94.68842315673828
-  yaw: -0.9299999551693621
+  profile: road_edge_keep_following
+- x: -68.479
+  y: 48.495
+  yaw: 1.516
+  radius: 1.3
+  stop: false
+- x: -67.824
+  y: 58.472
+  yaw: 1.475
+  radius: 1.3
+  stop: false
+- x: -66.89
+  y: 68.423
+  yaw: 1.491
+  radius: 1.3
+  stop: false
+  profile: road_edge_keep
+- x: -65.939
+  y: 78.37
+  yaw: 1.448
+  radius: 1.3
+  stop: false
+- x: -65.042
+  y: 88.319
+  yaw: 1.465
+  radius: 1.3
+  stop: false
+- x: -64.586
+  y: 98.279
+  yaw: 1.387
+  radius: 1.3
+  stop: false
+- x: -63.686
+  y: 104.616
+  yaw: 1.266
+  radius: 1.3
+  stop: false
+- x: -61.782
+  y: 107.601
+  yaw: 0.697
   radius: 1.3
   stop: false
   profile: default
-- x: 207.73074340820312
-  y: 78.50333404541016
-  yaw: -0.9299999871272737
+- x: -58.433
+  y: 108.756
+  yaw: 0.034
   radius: 1.3
   stop: false
-- x: 217.23817443847656
-  y: 63.78002166748047
-  yaw: -2.0126865032690335
+- x: -52.231
+  y: 107.474
+  yaw: -0.387
   radius: 1.3
   stop: false
-- x: 208.98521423339844
-  y: 55.969581604003906
-  yaw: -2.577753585618835
-  radius: 2.5
+- x: -42.634
+  y: 104.756
+  yaw: -0.128
+  radius: 1.3
   stop: false
-- x: 186.39910888671875
-  y: 40.61555480957031
-  yaw: -2.3957178960704573
-  radius: 2.5
+- x: -32.745
+  y: 103.346
+  yaw: -0.138
+  radius: 1.3
   stop: false
-  profile: narrow_mcl
-- x: 171.70
-  y: 29.41
-  yaw: -2.3957178960704573
-  radius: 2.5
+- x: -22.813
+  y: 102.255
+  yaw: -0.135
+  radius: 1.3
   stop: false
-- x: 162.37
-  y: 21.79
-  yaw: -2.436
-  radius: 2.5
+  profile: narrow
+- x: -12.893
+  y: 101.024
+  yaw: -0.078
+  radius: 1.3
   stop: false
-- x: 151.82106018066406
-  y: 12.806544303894043
-  yaw: -2.3957178960704573
-  radius: 2.5
+- x: -2.942
+  y: 100.248
+  yaw: -0.009
+  radius: 1.3
   stop: false
-- x: 150.00942993164062
-  y: 7.2201313972473145
-  yaw: -1.9787231846532725
-  radius: 2.5
+- x: 6.991
+  y: 99.312
+  yaw: -0.086
+  radius: 1.3
   stop: false
-- x: 137.15850830078125
-  y: -2.369338035583496
-  yaw: 2.2672845753250854
-  radius: 2.5
+- x: 16.959
+  y: 98.612
+  yaw: -0.093
+  radius: 1.3
+  stop: false
+- x: 21.245
+  y: 98.436
+  yaw: 0.238
+  radius: 1.3
+  stop: false
+- x: 24.144
+  y: 100.111
+  yaw: 0.429
+  radius: 1.3
+  stop: false
+- x: 26.424
+  y: 100.535
+  yaw: 0.04
+  radius: 1.3
+  stop: false
+- x: 36.355
+  y: 99.596
+  yaw: -0.241
+  radius: 1.3
+  stop: false
+- x: 38.239
+  y: 98.998
+  yaw: -0.405
+  radius: 1.3
+  stop: false
+- x: 39.821
+  y: 97.864
+  yaw: -0.997
+  radius: 1.3
   stop: false
   profile: default
-- x: 125.59375762939453
-  y: 9.012283325195312
-  yaw: 2.2672870915598384
-  radius: 2.5
+- x: 39.976
+  y: 91.907
+  yaw: -1.623
+  radius: 1.3
+  stop: false
+- x: 39.117
+  y: 81.949
+  yaw: -1.626
+  radius: 1.3
   stop: false
   profile: speed_down
-- x: 118.86117553710938
-  y: 10.683845520019531
-  yaw: -2.3627301202822624
-  radius: 0.8526020050048828
-  stop: true
-- x: 107.88453674316406
-  y: 1.7761555910110474
-  yaw: -2.3627300810371556
-  radius: 1.0
+- x: 38.386
+  y: 71.988
+  yaw: -1.441
+  radius: 1.3
   stop: false
-- x: 96.87068176269531
-  y: -7.312953472137451
-  yaw: -2.3627300810371556
+- x: 39.152
+  y: 70.381
+  yaw: -0.749
+  radius: 1.3
+  stop: false
+- x: 41.956
+  y: 68.985
+  yaw: -0.184
+  radius: 1.3
+  stop: false
+- x: 44.832
+  y: 69.502
+  yaw: 0.172
+  radius: 0.85
+  stop: true
+- x: 56.16
+  y: 73.394
+  yaw: 0.103
+  radius: 1.3
+  stop: false
+- x: 66.14
+  y: 72.986
+  yaw: -0.109
+  radius: 1.3
+  stop: false
+- x: 73.341
+  y: 71.974
+  yaw: -0.196
   radius: 0.85
   stop: true
   profile: default
-- x: 87.95121002197266
-  y: -10.964134216308594
-  yaw: -2.8000362765523534
+- x: 84.604
+  y: 66.175
+  yaw: -0.398
   radius: 1.3
   stop: false
-- x: 69.69153594970703
-  y: -20.663501739501953
-  yaw: -2.310200500645197
-  radius: 3.008715438842774
+- x: 93.88
+  y: 62.536
+  yaw: -0.274
+  radius: 1.3
+  stop: false
+- x: 103.466
+  y: 59.719
+  yaw: -0.228
+  radius: 1.3
   stop: false
   profile: default
-- x: 45.02241516113281
-  y: -41.791542053222656
-  yaw: -2.310200500645197
-  radius: 2.7181060791015597
+- x: 109.095
+  y: 58.448
+  yaw: -0.082
+  radius: 1.3
   stop: false
-- x: 16.251829147338867
-  y: -63.89483642578125
-  yaw: -2.52900002875281
-  radius: 3.209149169921872
+- x: 113.316
+  y: 58.331
+  yaw: -0.074
+  radius: 1.3
   stop: false
-- x: -6.489935398101807
-  y: -82.55238342285156
-  yaw: -2.440000021307245
-  radius: 2.548924255371091
+- x: 123.257
+  y: 57.286
+  yaw: -0.042
+  radius: 1.3
   stop: false
-- x: -33.71516418457031
-  y: -106.35440826416016
-  yaw: -2.4500000516710996
-  radius: 3.6759536743164034
+- x: 133.252
+  y: 57.092
+  yaw: -0.034
+  radius: 1.3
   stop: false
-- x: -61.712547302246094
-  y: -133.34744262695312
-  yaw: -1.1589999924302332
-  radius: 2.644619750976574
+- x: 143.202
+  y: 56.201
+  yaw: -0.168
+  radius: 1.3
   stop: false
-- x: -59.274
-  y: -140.441
-  yaw: -0.858
+- x: 153.083
+  y: 54.687
+  yaw: -0.085
+  radius: 1.3
+  stop: false
+- x: 157.358
+  y: 54.239
+  yaw: -0.133
+  radius: 0.85
+  stop: true
+- x: 163.035
+  y: 53.804
+  yaw: -0.042
+  radius: 1.3
+  stop: false
+- x: 172.98
+  y: 52.83
+  yaw: -0.206
+  radius: 1.3
+  stop: false
+- x: 182.813
+  y: 51.13
+  yaw: -0.045
+  radius: 1.3
+  stop: false
+- x: 185.941
+  y: 51.166
+  yaw: 0.044
+  radius: 0.85
+  stop: true
+- x: 192.791
+  y: 50.805
+  yaw: -0.133
+  radius: 1.3
+  stop: false
+- x: 202.706
+  y: 49.784
+  yaw: -0.012
+  radius: 1.3
+  stop: false
+- x: 212.676
+  y: 49.114
+  yaw: -0.083
+  radius: 1.3
+  stop: false
+- x: 222.65
+  y: 48.849
+  yaw: 0.01
+  radius: 1.3
+  stop: false
+- x: 232.582
+  y: 47.896
+  yaw: -0.157
+  radius: 1.3
+  stop: false
+- x: 242.539
+  y: 47.07
+  yaw: -0.04
+  radius: 1.3
+  stop: false
+- x: 252.516
+  y: 46.798
+  yaw: 0.081
+  radius: 1.3
+  stop: false
+- x: 262.487
+  y: 47.42
+  yaw: 0.14
+  radius: 1.3
+  stop: false
+- x: 268.018
+  y: 48.337
+  yaw: 0.282
+  radius: 1.3
+  stop: false
+- x: 271.996
+  y: 50.164
+  yaw: 0.388
+  radius: 1.3
+  stop: false
+- x: 275.501
+  y: 52.26
+  yaw: 1.016
+  radius: 1.3
+  stop: false
+- x: 276.48
+  y: 57.962
+  yaw: 1.528
   radius: 1.3
   stop: false
   profile: road_edge_keep
-- x: -52.572
-  y: -148.188
-  yaw: -0.858
+- x: 277.15
+  y: 67.937
+  yaw: 1.472
   radius: 1.3
   stop: false
-- x: -45.869
-  y: -155.935
-  yaw: -0.858
+- x: 278.159
+  y: 77.869
+  yaw: 1.518
   radius: 1.3
   stop: false
-- x: -39.166
-  y: -163.682
-  yaw: -0.858
+- x: 278.928
+  y: 87.837
+  yaw: 1.498
   radius: 1.3
   stop: false
-- x: -31.94
-  y: -171.13
-  yaw: -0.932
+- x: 279.778
+  y: 97.797
+  yaw: 1.442
   radius: 1.3
   stop: false
-- x: -28.147
-  y: -177.242
-  yaw: -0.932
-  radius: 1.3
-  stop: false
-- x: -23.831
-  y: -183.055
-  yaw: -0.676
+- x: 281.359
+  y: 109.591
+  yaw: 1.494
   radius: 0.85
   stop: true
-- x: -20.488
-  y: -185.739
-  yaw: -1.025
+- x: 282.211
+  y: 117.536
+  yaw: 1.428
   radius: 1.3
   stop: false
-- x: -18.161
-  y: -189.568
-  yaw: -0.827
+- x: 282.812
+  y: 127.505
+  yaw: 1.596
   radius: 1.3
   stop: false
-- x: -11.705
-  y: -196.584
-  yaw: -0.827
+- x: 283.419
+  y: 137.48
+  yaw: 1.512
   radius: 1.3
   stop: false
-- x: -5.248
-  y: -203.6
-  yaw: -0.915
+- x: 284.479
+  y: 147.408
+  yaw: 1.334
   radius: 1.3
   stop: false
-- x: -0.757
-  y: -209.437
-  yaw: -0.915
+- x: 285.68
+  y: 157.315
+  yaw: 1.501
   radius: 1.3
   stop: false
-- x: 3.735
-  y: -215.274
-  yaw: -0.852
+- x: 286.386
+  y: 167.276
+  yaw: 1.541
   radius: 1.3
   stop: false
-- x: 9.963
-  y: -222.391
-  yaw: -0.852
+- x: 287.231
+  y: 177.232
+  yaw: 1.534
   radius: 1.3
   stop: false
-- x: 16.192
-  y: -229.508
-  yaw: -0.852
-  radius: 1.3
-  stop: false
-- x: 22.421
-  y: -236.625
-  yaw: -0.981
-  radius: 1.3
-  stop: false
-- x: 25.7
-  y: -241.52
-  yaw: -0.683
+- x: 287.999
+  y: 187.193
+  yaw: 1.523
   radius: 1.3
   stop: false
   profile: following
-- x: 30.193
-  y: -245.172
-  yaw: -2.197
+- x: 288.35
+  y: 192.157
+  yaw: 1.044
   radius: 0.85
   stop: true
-- x: 26.631
-  y: -250.099
-  yaw: -2.404
+- x: 290.303
+  y: 193.113
+  yaw: 0.159
   radius: 1.3
   stop: false
-- x: 18.355
-  y: -257.626
-  yaw: -1.937
+- x: 292.947
+  y: 193.129
+  yaw: -0.063
+  radius: 1.3
+  stop: false
+- x: 302.937
+  y: 192.861
+  yaw: -0.006
+  radius: 1.3
+  stop: false
+- x: 306.845
+  y: 193.563
+  yaw: 0.413
   radius: 1.3
   stop: false
   profile: road_edge_keep
-- x: 17.25
-  y: -260.504
-  yaw: -1.69
+- x: 311.724
+  y: 196.999
+  yaw: 0.645
   radius: 1.3
   stop: false
-- x: 16.32
-  y: -268.266
-  yaw: -2.28
+- x: 314.668
+  y: 199.018
+  yaw: 0.324
   radius: 1.3
   stop: false
-- x: 10.769
-  y: -274.732
-  yaw: -2.462
+- x: 321.058
+  y: 199.296
+  yaw: -0.031
   radius: 1.3
   stop: false
-- x: 5.064
-  y: -279.346
-  yaw: -2.461
+- x: 331.027
+  y: 198.54
+  yaw: -0.056
   radius: 1.3
   stop: false
-- x: -0.5
-  y: -283.17
-  yaw: -2.369
+- x: 340.979
+  y: 197.785
+  yaw: 0.021
   radius: 1.3
   stop: false
-- x: -5.324
-  y: -288.522
-  yaw: -2.369
+- x: 350.948
+  y: 197.203
+  yaw: -0.054
   radius: 1.3
   stop: false
-- x: -10.007
-  y: -293.085
-  yaw: -2.505
-  radius: 1.3
-  stop: false
-- x: -15.212
-  y: -296.935
-  yaw: -2.505
-  radius: 1.3
-  stop: false
-- x: -20.416
-  y: -300.785
-  yaw: -2.414
+- x: 360.871
+  y: 196.027
+  yaw: -0.122
   radius: 1.3
   stop: false
   profile: road_edge_keep_following
-- x: -26.795
-  y: -306.465
-  yaw: -2.414
+- x: 370.817
+  y: 195.063
+  yaw: -0.122
   radius: 1.3
   stop: false
-- x: -33.174
-  y: -312.144
-  yaw: -2.414
+- x: 380.774
+  y: 194.217
+  yaw: -0.118
   radius: 1.3
   stop: false
-- x: -39.553
-  y: -317.824
-  yaw: -2.448
+- x: 390.739
+  y: 193.398
+  yaw: -0.089
   radius: 1.3
   stop: false
-- x: -47.48
-  y: -323.96
-  yaw: -2.448
+- x: 400.696
+  y: 192.493
+  yaw: -0.064
   radius: 1.3
   stop: false
-- x: -55.877
-  y: -331.402
-  yaw: -2.448
+- x: 410.661
+  y: 191.701
+  yaw: -0.043
   radius: 1.3
   stop: false
-- x: -64.039
-  y: -338.191
-  yaw: -2.448
+- x: 420.622
+  y: 190.89
+  yaw: -0.029
   radius: 1.3
   stop: false
-- x: -72.201
-  y: -344.98
-  yaw: -2.448
+- x: 430.586
+  y: 190.073
+  yaw: -0.087
   radius: 1.3
   stop: false
-- x: -80.363
-  y: -351.769
-  yaw: -2.286
+- x: 440.538
+  y: 189.168
+  yaw: -0.08
   radius: 1.3
   stop: false
-- x: -83.171
-  y: -355.0
-  yaw: -2.455
+- x: 450.489
+  y: 188.256
+  yaw: -0.084
   radius: 1.3
   stop: false
-- x: -91.198
-  y: -361.58
-  yaw: -2.455
+- x: 460.454
+  y: 187.437
+  yaw: -0.143
   radius: 1.3
   stop: false
-- x: -99.225
-  y: -368.16
-  yaw: -2.455
+- x: 470.368
+  y: 186.359
+  yaw: -0.107
   radius: 1.3
   stop: false
-- x: -107.252
-  y: -374.74
-  yaw: -2.455
+- x: 480.342
+  y: 185.73
+  yaw: -0.02
   radius: 1.3
   stop: false
-- x: -115.279
-  y: -381.319
-  yaw: -2.993
+- x: 486.223
+  y: 185.034
+  yaw: -0.285
   radius: 1.3
   stop: false
   profile: road_edge_keep
-- x: -119.613
-  y: -381.966
-  yaw: 3.057
+- x: 489.733
+  y: 183.052
+  yaw: -0.69
   radius: 1.3
   stop: false
-- x: -125.655
-  y: -381.452
-  yaw: 2.707
+- x: 493.452
+  y: 179.295
+  yaw: -0.908
   radius: 1.3
   stop: false
-- x: -131.063
-  y: -378.941
-  yaw: 2.487
+- x: 495.543
+  y: 175.09
+  yaw: -1.22
   radius: 1.3
   stop: false
-- x: -134.385
-  y: -376.389
-  yaw: 2.278
+- x: 497.064
+  y: 169.281
+  yaw: -1.498
   radius: 1.3
   stop: false
-- x: -140.351
-  y: -369.407
-  yaw: 2.278
+- x: 496.747
+  y: 165.316
+  yaw: -1.689
   radius: 1.3
   stop: false
-- x: -146.317
-  y: -362.425
-  yaw: 2.278
+- x: 496.217
+  y: 155.334
+  yaw: -1.664
   radius: 1.3
   stop: false
-- x: -152.284
-  y: -355.443
-  yaw: 2.17
+- x: 495.148
+  y: 145.395
+  yaw: -1.674
   radius: 1.3
   stop: false
-- x: -156.025
-  y: -349.96
-  yaw: 2.169
+- x: 493.096
+  y: 132.594
+  yaw: -1.788
   radius: 0.85
   stop: true
-- x: -159.766
-  y: -344.476
-  yaw: 2.445
+- x: 492.054
+  y: 125.834
+  yaw: -1.575
   radius: 1.3
   stop: false
-- x: -168.542
-  y: -337.141
-  yaw: 2.31
+- x: 493.146
+  y: 115.92
+  yaw: -1.543
   radius: 1.3
   stop: false
-- x: -174.099
-  y: -331.043
-  yaw: 2.264
+- x: 492.504
+  y: 105.945
+  yaw: -1.661
   radius: 1.3
   stop: false
-- x: -181.288
-  y: -322.384
-  yaw: 2.264
+- x: 491.503
+  y: 95.997
+  yaw: -1.686
   radius: 1.3
   stop: false
-- x: -188.476
-  y: -313.725
-  yaw: 2.264
+- x: 490.545
+  y: 86.045
+  yaw: -1.699
   radius: 1.3
   stop: false
-- x: -195.665
-  y: -305.067
-  yaw: 2.286
+- x: 489.682
+  y: 76.087
+  yaw: -1.685
   radius: 1.3
   stop: false
-- x: -203.448
-  y: -296.115
-  yaw: 2.286
+- x: 488.815
+  y: 66.129
+  yaw: -1.615
   radius: 1.3
   stop: false
-- x: -211.231
-  y: -287.163
-  yaw: 2.286
+- x: 487.982
+  y: 56.173
+  yaw: -1.638
   radius: 1.3
   stop: false
-- x: -219.014
-  y: -278.211
-  yaw: 2.287
+- x: 487.119
+  y: 46.213
+  yaw: -1.637
   radius: 1.3
   stop: false
-- x: -226.798
-  y: -269.26
-  yaw: 2.286
+- x: 486.692
+  y: 36.24
+  yaw: -1.628
   radius: 1.3
   stop: false
-- x: -234.581
-  y: -260.308
-  yaw: 2.286
+- x: 485.686
+  y: 26.299
+  yaw: -1.645
   radius: 1.3
   stop: false
-- x: -242.364
-  y: -251.356
-  yaw: 2.286
+- x: 484.85
+  y: 16.336
+  yaw: -1.674
   radius: 1.3
   stop: false
-- x: -250.147
-  y: -242.404
-  yaw: 2.267
+- x: 484.088
+  y: 6.366
+  yaw: -1.638
   radius: 1.3
   stop: false
-- x: -256.74
-  y: -234.515
-  yaw: 2.267
+- x: 483.368
+  y: -3.6
+  yaw: -1.644
   radius: 1.3
   stop: false
-- x: -263.334
-  y: -226.626
-  yaw: 2.267
+- x: 482.518
+  y: -13.562
+  yaw: -1.67
   radius: 1.3
   stop: false
-- x: -269.927
-  y: -218.737
-  yaw: 2.267
+- x: 481.486
+  y: -23.507
+  yaw: -1.679
   radius: 1.3
   stop: false
-- x: -276.52
-  y: -210.848
-  yaw: 2.267
+- x: 480.372
+  y: -33.437
+  yaw: -1.717
   radius: 1.3
   stop: false
-- x: -283.114
-  y: -202.959
-  yaw: 2.031
+- x: 479.384
+  y: -43.383
+  yaw: -1.664
   radius: 1.3
   stop: false
-- x: -285.063
-  y: -199.025
-  yaw: 1.23
+- x: 478.689
+  y: -53.356
+  yaw: -1.626
   radius: 1.3
   stop: false
-- x: -284.151
-  y: -196.453
-  yaw: 0.87
+- x: 478.003
+  y: -60.53
+  yaw: -1.753
   radius: 1.3
   stop: false
-- x: -281.046
-  y: -192.776
-  yaw: 0.738
+- x: 476.906
+  y: -63.044
+  yaw: -2.335
   radius: 1.3
   stop: false
-- x: -273.903
-  y: -186.283
-  yaw: 0.738
+- x: 474.889
+  y: -64.063
+  yaw: -2.911
   radius: 1.3
   stop: false
-- x: -266.76
-  y: -179.79
-  yaw: 0.717
+- x: 467.187
+  y: -64.281
+  yaw: -3.128
   radius: 1.3
   stop: false
-- x: -258.188
-  y: -172.313
-  yaw: 0.717
+- x: 457.205
+  y: -63.83
+  yaw: 3.084
   radius: 1.3
   stop: false
-- x: -249.617
-  y: -164.836
-  yaw: 0.575
+- x: 447.231
+  y: -63.18
+  yaw: 3.045
   radius: 1.3
   stop: false
-- x: -248.173
-  y: -163.190
-  yaw: 0.742
+- x: 437.269
+  y: -62.337
+  yaw: 3.074
   radius: 1.3
   stop: false
-- x: -242.118
-  y: -158.451
-  yaw: 0.451
+- x: 427.291
+  y: -61.781
+  yaw: 2.998
   radius: 1.3
   stop: false
-- x: -238.89
-  y: -156.887
-  yaw: 0.377
+- x: 417.349
+  y: -61.025
+  yaw: 2.991
   radius: 1.3
   stop: false
-- x: -237.4
-  y: -156.1
-  yaw: -0.972
+- x: 415.416
+  y: -60.531
+  yaw: 2.679
   radius: 1.3
   stop: false
-- x: -232.227
-  y: -162.949
-  yaw: -0.87
+- x: 413.78
+  y: -58.932
+  yaw: 2.009
   radius: 1.3
   stop: false
-- x: -227.788
-  y: -168.212
-  yaw: -1.152
+- x: 413.583
+  y: -53.285
+  yaw: 1.504
   radius: 1.3
   stop: false
-- x: -226.058
-  y: -172.096
-  yaw: -2.082
+- x: 414.947
+  y: -43.386
+  yaw: 1.399
   radius: 1.3
   stop: false
-- x: -227.422
-  y: -174.528
-  yaw: -2.422
+- x: 416.644
+  y: -39.932
+  yaw: 0.474
   radius: 1.3
   stop: false
-- x: -235.646
-  y: -181.741
-  yaw: -1.819
+- x: 422.646
+  y: -40.251
+  yaw: -0.147
   radius: 1.3
   stop: false
-- x: -236.841
-  y: -186.459
-  yaw: -1.279
+- x: 429.273
+  y: -40.502
+  yaw: 0.216
   radius: 1.3
   stop: false
-- x: -235.727
-  y: -190.171
-  yaw: -0.858
+- x: 432.277
+  y: -39.083
+  yaw: 0.546
   radius: 1.3
   stop: false
-- x: -228.805
-  y: -198.178
-  yaw: -0.858
+- x: 435.426
+  y: -35.848
+  yaw: 1.146
   radius: 1.3
   stop: false
-- x: -221.884
-  y: -206.185
-  yaw: -0.858
+- x: 436.219
+  y: -30.563
+  yaw: 1.52
   radius: 1.3
   stop: false
-- x: -214.962
-  y: -214.192
-  yaw: -0.858
+- x: 437.055
+  y: -20.607
+  yaw: 1.471
   radius: 1.3
   stop: false
-- x: -208.04
-  y: -222.199
-  yaw: -0.858
+- x: 438.106
+  y: -10.668
+  yaw: 1.478
   radius: 1.3
   stop: false
-- x: -201.119
-  y: -230.205
-  yaw: -0.858
+- x: 438.997
+  y: -0.723
+  yaw: 1.517
   radius: 1.3
   stop: false
-- x: -194.197
-  y: -238.212
-  yaw: -0.858
+- x: 439.732
+  y: 9.244
+  yaw: 1.46
   radius: 1.3
   stop: false
-- x: -187.275
-  y: -246.219
-  yaw: -1.001
+- x: 440.561
+  y: 19.208
+  yaw: 1.461
   radius: 1.3
   stop: false
-- x: -184.578
-  y: -250.432
-  yaw: -1.687
+- x: 441.115
+  y: 29.188
+  yaw: 1.473
   radius: 1.3
   stop: false
-- x: -184.818
-  y: -252.49
-  yaw: -2.271
+- x: 441.833
+  y: 39.161
+  yaw: 1.464
+  radius: 1.3
+  stop: false
+- x: 443.152
+  y: 44.557
+  yaw: 0.857
   radius: 1.3
   stop: false
   profile: road_edge_keep_following
-- x: -186.279
-  y: -254.224
-  yaw: -2.43
+- x: 445.218
+  y: 45.333
+  yaw: 0.017
   radius: 1.3
   stop: false
-- x: -193.375
-  y: -260.338
-  yaw: -2.43
+- x: 447.329
+  y: 45.088
+  yaw: -0.12
   radius: 1.3
   stop: false
-- x: -200.47
-  y: -266.452
-  yaw: -2.43
+- x: 457.299
+  y: 44.42
+  yaw: -0.075
   radius: 1.3
   stop: false
-- x: -207.566
-  y: -272.566
-  yaw: -2.43
+- x: 467.268
+  y: 43.645
+  yaw: -0.099
   radius: 1.3
   stop: false
-- x: -214.662
-  y: -278.68
-  yaw: -1.7
+- x: 477.229
+  y: 42.899
+  yaw: -0.102
+  radius: 1.3
+  stop: false
+- x: 485.345
+  y: 42.5
+  yaw: 0.271
   radius: 1.3
   stop: false
   profile: road_edge_keep
-- x: -215.114
-  y: -282.154
-  yaw: -0.837
+- x: 486.651
+  y: 43.698
+  yaw: 1.112
   radius: 1.3
   stop: false
-- x: -209.323
-  y: -288.57
-  yaw: -0.837
+- x: 487.176
+  y: 53.627
+  yaw: 1.474
   radius: 1.3
   stop: false
-- x: -203.532
-  y: -294.986
-  yaw: -0.837
+- x: 487.975
+  y: 63.591
+  yaw: 1.497
   radius: 1.3
   stop: false
-- x: -197.741
-  y: -301.402
-  yaw: -0.867
+- x: 488.894
+  y: 73.547
+  yaw: 1.449
   radius: 1.3
   stop: false
-- x: -190.411
-  y: -310.04
-  yaw: -0.867
+- x: 489.741
+  y: 83.509
+  yaw: 1.481
   radius: 1.3
   stop: false
-- x: -183.08
-  y: -318.677
-  yaw: -0.867
+- x: 490.743
+  y: 93.457
+  yaw: 1.461
   radius: 1.3
   stop: false
-- x: -175.75
-  y: -327.314
-  yaw: -0.867
+- x: 491.534
+  y: 103.422
+  yaw: 1.474
   radius: 1.3
   stop: false
-- x: -168.42
-  y: -335.951
-  yaw: -0.842
+- x: 492.242
+  y: 113.397
+  yaw: 1.491
   radius: 1.3
   stop: false
-- x: -164.105
-  y: -340.784
-  yaw: -0.842
+- x: 492.625
+  y: 120.226
+  yaw: 1.517
   radius: 0.85
   stop: true
-- x: -159.79
-  y: -345.616
-  yaw: -0.769
+- x: 493.628
+  y: 133.187
+  yaw: 1.425
   radius: 1.3
   stop: false
-- x: -156.246
-  y: -349.047
-  yaw: -1.131
+- x: 494.816
+  y: 137.585
+  yaw: 1.428
   radius: 1.3
   stop: false
-- x: -154.248
-  y: -353.291
-  yaw: -0.848
+- x: 495.215
+  y: 143.002
+  yaw: 1.494
   radius: 1.3
   stop: false
-- x: -147.202
-  y: -361.274
-  yaw: -0.848
+- x: 496.202
+  y: 152.946
+  yaw: 1.49
   radius: 1.3
   stop: false
-- x: -140.156
-  y: -369.257
-  yaw: -0.848
+- x: 496.816
+  y: 162.924
+  yaw: 1.507
   radius: 1.3
   stop: false
-- x: -133.109
-  y: -377.239
-  yaw: -0.44
+- x: 496.948
+  y: 169.887
+  yaw: 1.683
   radius: 1.3
   stop: false
-- x: -124.018
-  y: -381.519
-  yaw: 0.023
+- x: 496.211
+  y: 172.816
+  yaw: 1.894
   radius: 1.3
   stop: false
-- x: -117.716
-  y: -381.371
-  yaw: 0.385
-  radius: 0.85
-  stop: true
-- x: -112.616
-  y: -379.307
-  yaw: 0.691
+- x: 494.361
+  y: 177.536
+  yaw: 2.053
   radius: 1.3
   stop: false
-- x: -106.051
-  y: -373.875
-  yaw: 0.691
+- x: 491.198
+  y: 181.173
+  yaw: 2.53
+  radius: 1.3
+  stop: false
+- x: 487.164
+  y: 184.567
+  yaw: 2.712
+  radius: 1.3
+  stop: false
+- x: 482.71
+  y: 185.566
+  yaw: 3.039
+  radius: 1.3
+  stop: false
+- x: 472.744
+  y: 186.307
+  yaw: 3.024
   radius: 1.3
   stop: false
   profile: road_edge_keep_following
-- x: -99.487
-  y: -368.443
-  yaw: 1.094
+- x: 462.82
+  y: 187.384
+  yaw: 3.116
   radius: 1.3
   stop: false
-- x: -98.219
-  y: -365.99
-  yaw: 0.583
+- x: 452.843
+  y: 187.975
+  yaw: 3.036
   radius: 1.3
   stop: false
-- x: -92.422
-  y: -362.168
-  yaw: 0.775
+- x: 442.878
+  y: 188.569
+  yaw: 2.933
   radius: 1.3
   stop: false
-- x: -87.845
-  y: -357.688
-  yaw: 0.775
+- x: 432.991
+  y: 189.936
+  yaw: 3.011
   radius: 1.3
   stop: false
-- x: -83.268
-  y: -353.207
-  yaw: 0.621
+- x: 423.036
+  y: 190.833
+  yaw: 3.055
   radius: 1.3
   stop: false
-- x: -79.152
-  y: -350.263
-  yaw: 0.641
+- x: 413.082
+  y: 191.638
+  yaw: 3.044
   radius: 1.3
   stop: false
-- x: -72.276
-  y: -345.135
-  yaw: 0.736
+- x: 403.124
+  y: 192.529
+  yaw: 2.992
   radius: 1.3
   stop: false
-- x: -66.338
-  y: -339.754
-  yaw: 0.736
+- x: 393.169
+  y: 193.314
+  yaw: 3.048
   radius: 1.3
   stop: false
-- x: -60.401
-  y: -334.372
-  yaw: 0.658
+- x: 383.205
+  y: 194.131
+  yaw: 3.066
   radius: 1.3
   stop: false
-- x: -55.012
-  y: -330.21
-  yaw: 0.658
+- x: 373.244
+  y: 194.975
+  yaw: 3.029
   radius: 1.3
   stop: false
-- x: -49.624
-  y: -326.048
-  yaw: 0.71
+- x: 363.281
+  y: 195.772
+  yaw: 3.091
   radius: 1.3
   stop: false
-- x: -40.984
-  y: -318.625
-  yaw: 0.71
+- x: 353.334
+  y: 196.773
+  yaw: 3.044
   radius: 1.3
   stop: false
-- x: -32.345
-  y: -311.203
-  yaw: 0.71
+- x: 343.394
+  y: 197.829
+  yaw: 3.043
   radius: 1.3
   stop: false
-- x: -23.705
-  y: -303.781
-  yaw: 0.71
+- x: 333.443
+  y: 198.555
+  yaw: 2.969
   radius: 1.3
   stop: false
-- x: -15.065
-  y: -296.359
-  yaw: 0.71
+- x: 323.482
+  y: 199.265
+  yaw: 3.074
   radius: 1.3
   stop: false
-- x: -6.425
-  y: -288.936
-  yaw: 0.71
-  radius: 1.3
-  stop: false
-- x: 2.214
-  y: -281.514
-  yaw: 0.71
-  radius: 1.3
-  stop: false
-- x: 10.854
-  y: -274.092
-  yaw: 0.576
-  radius: 1.3
-  stop: false
-- x: 14.311
-  y: -271.845
-  yaw: 0.9
-  radius: 1.3
-  stop: false
-  profile: road_edge_keep
-- x: 16.848
-  y: -268.648
-  yaw: 1.636
-  radius: 1.3
-  stop: false
-- x: 16.596
-  y: -264.792
-  yaw: 1.344
-  radius: 1.3
-  stop: false
-- x: 17.661
-  y: -260.178
-  yaw: 1.05
-  radius: 1.3
-  stop: false
-- x: 19.505
-  y: -256.966
-  yaw: 0.755
-  radius: 1.3
-  stop: false
-- x: 24.395
-  y: -252.367
-  yaw: 0.755
-  radius: 1.3
-  stop: false
-- x: 29.286
-  y: -247.768
-  yaw: 1.911
-  radius: 1.3
-  stop: false
-- x: 29.6
-  y: -244.6
-  yaw: 2.199
-  radius: 1.3
-  stop: false
-- x: 25.6
-  y: -239.6
-  yaw: 2.199
-  radius: 1.3
-  stop: false
-- x: 21.6
-  y: -234.6
-  yaw: 2.278
-  radius: 1.3
-  stop: false
-- x: 13.481
-  y: -226.276
-  yaw: 2.278
-  radius: 1.3
-  stop: false
-- x: 6.126
-  y: -217.671
-  yaw: 2.278
-  radius: 1.3
-  stop: false
-- x: -1.229
-  y: -209.066
-  yaw: 2.278
-  radius: 1.3
-  stop: false
-- x: -8.584
-  y: -200.461
-  yaw: 2.278
-  radius: 1.3
-  stop: false
-- x: -15.939
-  y: -191.856
-  yaw: 2.456
-  radius: 1.3
-  stop: false
-- x: -19.065
-  y: -189.3
-  yaw: 2.24
-  radius: 1.3
-  stop: false
-- x: -24.474
-  y: -182.467
-  yaw: 2.24
-  radius: 1.3
-  stop: false
-- x: -29.882
-  y: -175.634
-  yaw: 2.24
-  radius: 1.3
-  stop: false
-- x: -35.291
-  y: -168.801
-  yaw: 2.279
-  radius: 1.3
-  stop: false
-- x: -41.778
-  y: -161.231
-  yaw: 2.279
+- x: 315.513
+  y: 199.533
+  yaw: -3.01
   radius: 0.85
   stop: true
-- x: -48.265
-  y: -153.661
-  yaw: 2.279
+  profile: road_edge_keep
+- x: 312.943
+  y: 198.948
+  yaw: -2.743
   radius: 1.3
   stop: false
-- x: -54.15
-  y: -145.74
-  yaw: 2.279
+- x: 307.269
+  y: 194.86
+  yaw: -2.66
   radius: 1.3
   stop: false
-- x: -61.239
-  y: -138.522
-  yaw: 2.158
+- x: 305.062
+  y: 194.088
+  yaw: -2.912
   radius: 1.3
   stop: false
-- x: -60.138633728027344
-  y: -129.10592651367188
-  yaw: 1.3670000132021498
-  radius: 3.793980407714841
+- x: 302.212
+  y: 193.563
+  yaw: -3.073
+  radius: 1.3
+  stop: false
+- x: 295.129
+  y: 194.027
+  yaw: 3.087
+  radius: 1.3
+  stop: false
+- x: 291.774
+  y: 194.234
+  yaw: -3.064
+  radius: 1.3
+  stop: false
+- x: 289.767
+  y: 193.554
+  yaw: -2.337
+  radius: 1.3
+  stop: false
+- x: 289.122
+  y: 189.191
+  yaw: -1.672
+  radius: 1.3
+  stop: false
+- x: 287.147
+  y: 179.449
+  yaw: -1.753
+  radius: 1.3
+  stop: false
+- x: 286.431
+  y: 169.499
+  yaw: -1.655
+  radius: 1.3
+  stop: false
+- x: 285.549
+  y: 159.54
+  yaw: -1.659
+  radius: 1.3
+  stop: false
+- x: 284.793
+  y: 149.57
+  yaw: -1.599
+  radius: 1.3
+  stop: false
+- x: 283.789
+  y: 139.633
+  yaw: -1.724
+  radius: 1.3
+  stop: false
+- x: 282.925
+  y: 129.675
+  yaw: -1.664
+  radius: 1.3
+  stop: false
+- x: 282.331
+  y: 119.713
+  yaw: -1.624
+  radius: 1.3
+  stop: false
+- x: 281.865
+  y: 115.649
+  yaw: -1.703
+  radius: 0.85
+  stop: true
+- x: 281.552
+  y: 109.756
+  yaw: -1.586
+  radius: 1.3
+  stop: false
+- x: 280.233
+  y: 99.868
+  yaw: -1.645
+  radius: 1.3
+  stop: false
+- x: 279.314
+  y: 89.92
+  yaw: -1.633
+  radius: 1.3
+  stop: false
+- x: 278.721
+  y: 79.95
+  yaw: -1.664
+  radius: 1.3
+  stop: false
+- x: 277.834
+  y: 69.995
+  yaw: -1.72
+  radius: 1.3
+  stop: false
+- x: 276.647
+  y: 60.083
+  yaw: -1.671
+  radius: 1.3
+  stop: false
+- x: 275.372
+  y: 50.205
+  yaw: -1.971
+  radius: 1.3
+  stop: false
+- x: 274.365
+  y: 48.339
+  yaw: -2.22
+  radius: 1.3
+  stop: false
+- x: 272.419
+  y: 46.657
+  yaw: -2.615
+  radius: 1.3
+  stop: false
+- x: 270.062
+  y: 45.843
+  yaw: -3.012
+  radius: 1.3
   stop: false
   profile: default
-- x: -45.625755310058594
-  y: -115.35748291015625
-  yaw: 0.6919999934780631
-  radius: 2.7421539306640597
+- x: 267.284
+  y: 45.866
+  yaw: 3.1
+  radius: 1.3
   stop: false
-- x: -17.82079315185547
-  y: -92.18586730957031
-  yaw: 0.6659999790615331
-  radius: 3.015812683105466
+- x: 257.308
+  y: 46.392
+  yaw: 3.025
+  radius: 1.3
   stop: false
-- x: 9.05134391784668
-  y: -70.18896484375
-  yaw: 0.7969999973689026
-  radius: 2.3811614990234347
+- x: 247.327
+  y: 46.835
+  yaw: 3.106
+  radius: 1.3
   stop: false
-- x: 32.290184020996094
-  y: -52.35350799560547
-  yaw: 0.6229999832044514
-  radius: 2.4490936279296847
+- x: 237.386
+  y: 47.877
+  yaw: 3.062
+  radius: 1.3
   stop: false
-- x: 54.659175872802734
-  y: -33.9266471862793
-  yaw: 0.725000045554534
-  radius: 3.124623107910157
+- x: 227.421
+  y: 48.661
+  yaw: 3.114
+  radius: 1.3
   stop: false
-- x: 74.66969299316406
-  y: -16.966264724731445
-  yaw: 0.45699999381417683
-  radius: 2.4597337722778327
+- x: 217.45
+  y: 49.208
+  yaw: -3.102
+  radius: 1.3
   stop: false
-- x: 84.00544738769531
-  y: -11.339482307434082
-  yaw: 0.09500000199870463
+- x: 212.897
+  y: 48.937
+  yaw: 3.108
+  radius: 1.3
+  stop: false
+- x: 207.492
+  y: 49.528
+  yaw: 3.0
+  radius: 1.3
+  stop: false
+- x: 197.539
+  y: 50.382
+  yaw: 3.013
+  radius: 1.3
+  stop: false
+- x: 192.326
+  y: 50.928
+  yaw: 3.042
   radius: 0.85
   stop: true
-- x: 96.89
-  y: -4.95
-  yaw: 0.63
+- x: 187.585
+  y: 51.326
+  yaw: 3.046
   radius: 1.3
   stop: false
-- x: 107.90291595458984
-  y: 2.5184812545776367
-  yaw: 1.2029999569054668
+- x: 177.634
+  y: 52.283
+  yaw: 3.04
+  radius: 1.3
+  stop: false
+- x: 169.596
+  y: 52.757
+  yaw: -3.091
   radius: 0.85
   stop: true
-- x: 113.65
-  y: 14.71
-  yaw: 1.973
+- x: 164.297
+  y: 52.858
+  yaw: 3.058
   radius: 1.3
   stop: false
-- x: 108.82
-  y: 22.38
-  yaw: 2.266
+- x: 157.791
+  y: 54.044
+  yaw: 2.965
   radius: 1.3
   stop: false
-- x: 102.737
-  y: 30.899
-  yaw: 2.265
+- x: 147.89
+  y: 55.419
+  yaw: 2.973
   radius: 1.3
   stop: false
-- x: 96.347
-  y: 38.569
-  yaw: 2.266
+- x: 137.995
+  y: 56.803
+  yaw: 3.076
   radius: 1.3
   stop: false
-- x: 89.956
-  y: 46.238
-  yaw: 2.265
+- x: 128.021
+  y: 57.458
+  yaw: 3.028
   radius: 1.3
   stop: false
-- x: 83.565
-  y: 53.908
-  yaw: 2.403
+- x: 118.065
+  y: 58.365
+  yaw: 3.041
   radius: 1.3
   stop: false
-- x: 74.83
-  y: 61.86
-  yaw: 2.519
+- x: 108.091
+  y: 59.051
+  yaw: 3.062
   radius: 1.3
   stop: false
-- x: 72.542
-  y: 63.503
-  yaw: 2.932
+- x: 98.176
+  y: 60.292
+  yaw: 2.947
   radius: 1.3
   stop: false
-- x: 70.398
-  y: 63.959
-  yaw: -2.503
+- x: 88.644
+  y: 63.258
+  yaw: 2.768
   radius: 1.3
   stop: false
-- x: 61.452
-  y: 57.313
-  yaw: -2.503
+- x: 85.246
+  y: 64.874
+  yaw: 2.705
+  radius: 0.85
+  stop: true
+- x: 79.514
+  y: 67.295
+  yaw: 2.715
   radius: 1.3
   stop: false
+- x: 70.66
+  y: 71.864
+  yaw: 2.86
+  radius: 1.3
+  stop: false
+- x: 60.72
+  y: 72.789
+  yaw: 3.065
+  radius: 1.3
+  stop: false
+- x: 54.697
+  y: 73.128
+  yaw: -2.987
+  radius: 1.3
+  stop: false
+- x: 50.529
+  y: 71.511
+  yaw: -2.795
+  radius: 0.85
+  stop: true
+- x: 44.836
+  y: 69.059
+  yaw: -2.432
+  radius: 1.3
+  stop: false
+- x: 43.232
+  y: 66.265
+  yaw: -1.951
+  radius: 1.3
+  stop: false
+- x: 40.713
+  y: 56.654
+  yaw: -1.619
+  radius: 1.3
+  stop: false
+- x: 39.65
+  y: 46.729
+  yaw: -1.629
+  radius: 1.3
+  stop: false
+- x: 38.657
+  y: 36.786
+  yaw: -1.613
+  radius: 1.3
+  stop: false
+- x: 37.871
+  y: 26.83
+  yaw: -1.662
+  radius: 1.3
+  stop: false
+- x: 37.372
+  y: 16.869
+  yaw: -1.517
+  radius: 1.3
+  stop: false
+- x: 38.02
+  y: 6.91
+  yaw: -1.255
+  radius: 1.3
+  stop: false
+- x: 40.041
+  y: 4.334
+  yaw: -0.481
+  radius: 1.3
+  stop: false
+- x: 46.566
+  y: 3.485
+  yaw: -0.064
+  radius: 1.3
+  stop: false
+- x: 56.458
+  y: 2.285
+  yaw: -0.145
+  radius: 1.3
+  stop: false
+- x: 59.06
+  y: 1.431
+  yaw: -0.913
+  radius: 0.85
+  stop: true
