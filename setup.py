@@ -24,6 +24,7 @@ setup(
             'waypoint_core = rsf_waypoint_manager.waypoint_core:main',
             'waypoint_recorder = rsf_waypoint_manager.utils.recording_system:main',
             'queue_guard = rsf_waypoint_manager.queue_guard:main',
+            'yield_guard = rsf_waypoint_manager.yield_guard:main',
         ],
     },
 )

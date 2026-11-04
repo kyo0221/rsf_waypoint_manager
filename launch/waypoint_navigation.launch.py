@@ -42,10 +42,22 @@ def generate_launch_description():
         output='screen',
     )
 
+    yield_guard_node = Node(
+        package='rsf_waypoint_manager',
+        executable='yield_guard',
+        name='yield_guard',
+        parameters=[{
+            'waypoints_file': LaunchConfiguration('waypoints_file'),
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
+        }],
+        output='screen',
+    )
+
     return LaunchDescription([
         waypoints_file_arg,
         profiles_file_arg,
         use_sim_time_arg,
         waypoint_navigator_node,
         queue_guard_node,
+        yield_guard_node,
     ])
