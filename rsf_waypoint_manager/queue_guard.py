@@ -12,6 +12,24 @@ from std_msgs.msg import Float32
 from tf2_ros import Buffer, TransformListener
 
 
+def static_mask(grid, resolution, margin):
+    """占有 (>=65) セルを margin [m] だけ膨らませた bool マスク"""
+    cells = max(1, math.ceil(margin / resolution))
+    y, x = np.ogrid[-cells:cells + 1, -cells:cells + 1]
+    return ndimage.binary_dilation(grid >= 65, structure=(x * x + y * y) <= cells * cells)
+
+
+def static_hit(statics, px, py):
+    """map 座標の点 (px, py) が, いずれかの静的マスク [(info, mask), ...] に入っていれば True"""
+    hit = np.zeros(np.shape(px), dtype=bool)
+    for info, mask in statics:
+        mi = np.floor((px - info.origin.position.x) / info.resolution).astype(int)
+        mj = np.floor((py - info.origin.position.y) / info.resolution).astype(int)
+        ok = (mi >= 0) & (mi < info.width) & (mj >= 0) & (mj < info.height)
+        hit[ok] |= mask[mj[ok], mi[ok]]
+    return hit
+
+
 class QueueGuard(Node):
 
     def __init__(self):
@@ -26,6 +44,9 @@ class QueueGuard(Node):
         self.declare_parameter('static_margin', 0.5)
         self.declare_parameter('lethal', 100)
         self.declare_parameter('max_object_size', 1.5)
+        # 前走物体として数えない静的マスク. 芝生マスク (keepout) を local costmap に入れると,
+        # その縁が小さな塊として「前方の物体」に見えて停止するため, /map と同様に除外する
+        self.declare_parameter('static_mask_topics', ['/map', '/grass_filter_mask'])
         self.route = []
         path = self.get_parameter('waypoints_file').value
         if path:
@@ -35,13 +56,15 @@ class QueueGuard(Node):
         self.local = None
         self.grid = None
         self.objects = None
-        self.static = None
+        self.statics = {}
         self.active = False
         transient = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.create_subscription(Path, '/plan', self.on_plan, 1)
         self.create_subscription(OccupancyGrid, '/local_costmap/costmap', self.on_local, 1)
         self.create_subscription(OccupancyGridUpdate, '/local_costmap/costmap_updates', self.on_local_update, 10)
-        self.create_subscription(OccupancyGrid, '/map', self.on_map, transient)
+        for topic in self.get_parameter('static_mask_topics').value:
+            self.create_subscription(
+                OccupancyGrid, topic, lambda msg, topic=topic: self.on_map(topic, msg), transient)
         self.pub = self.create_publisher(Float32, '/waypoint_navigator/speed_override', 10)
         self.distance_pub = self.create_publisher(Float32, '~/obstacle_distance', 10)
         self.buf = Buffer()
@@ -75,11 +98,9 @@ class QueueGuard(Node):
             self.objects = small[labels]
         return self.objects
 
-    def on_map(self, msg):
+    def on_map(self, topic, msg):
         grid = np.array(msg.data, dtype=np.int16).reshape(msg.info.height, msg.info.width)
-        cells = max(1, math.ceil(self.get_parameter('static_margin').value / msg.info.resolution))
-        y, x = np.ogrid[-cells:cells + 1, -cells:cells + 1]
-        self.static = (msg.info, ndimage.binary_dilation(grid >= 65, structure=(x * x + y * y) <= cells * cells))
+        self.statics[topic] = (msg.info, static_mask(grid, msg.info.resolution, self.get_parameter('static_margin').value))
 
     def pose(self, target, source):
         tf = self.buf.lookup_transform(target, source, rclpy.time.Time())
@@ -137,14 +158,7 @@ class QueueGuard(Node):
         objects = self.object_mask()
         hit = np.zeros(ci.shape, dtype=bool)
         hit[inside] = objects[cj[inside], ci[inside]]
-        if self.static is not None:
-            info, mask = self.static
-            mi = np.floor((px - info.origin.position.x) / info.resolution).astype(int)
-            mj = np.floor((py - info.origin.position.y) / info.resolution).astype(int)
-            ok = (mi >= 0) & (mi < info.width) & (mj >= 0) & (mj < info.height)
-            static_hit = np.zeros(ci.shape, dtype=bool)
-            static_hit[ok] = mask[mj[ok], mi[ok]]
-            hit &= ~static_hit
+        hit &= ~static_hit(list(self.statics.values()), px, py)
         rows = np.where(hit.any(axis=1))[0]
         if len(rows) == 0:
             return None
