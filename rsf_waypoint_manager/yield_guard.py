@@ -367,8 +367,15 @@ class YieldGuard(Node):
                     return all(cost(a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n) < 99
                                for k in range(1, n + 1))
 
+                robot_l = lane.project(*self.robot_xy)[1]
+
+                def exit_clear(p):
+                    # 待機点で向きをそろえた後, レーンへ斜め前に戻れること (正面のコーン等で出られない点を除く)
+                    ps, _ = lane.project(*p)
+                    return path_clear(p, lane.point(ps + 2.0, robot_l))
+
                 def usable(p):
-                    return (cost(*p) <= limit and path_clear(self.robot_xy, p)
+                    return (cost(*p) <= limit and path_clear(self.robot_xy, p) and exit_clear(p)
                             and abs(lane.project(*p)[1] - opponent_l) >= min_sep)
                 if mode == 'hybrid':
                     refuge = choose_fixed_refuge(lane, self.robot_xy, self.decision_xy, self.refuge_points(),
@@ -378,7 +385,7 @@ class YieldGuard(Node):
                 side = self.pedestrian_side(lane)
                 if refuge is None and side is not None:
                     refuge = find_refuge(
-                        lane, self.robot_xy, self.decision_xy, free=lambda p: cost(*p) <= limit,
+                        lane, self.robot_xy, self.decision_xy, free=lambda p: cost(*p) <= limit and exit_clear(p),
                         path_clear=path_clear, ahead=self.get_parameter('refuge_ahead').value,
                         lateral=tuple(self.get_parameter('refuge_lateral').value),
                         step=self.get_parameter('refuge_step').value, sides=(side,), min_sep=min_sep,
