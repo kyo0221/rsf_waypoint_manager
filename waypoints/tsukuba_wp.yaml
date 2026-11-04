@@ -4,6 +4,7 @@ waypoints:
   yaw: 3.065
   radius: 1.3
   stop: false
+  profile: wide_road  # 確認走行区間 WP0-9: 広い舗装. 遅いロボットは追い越す
 - x: 14.834
   y: 3.982
   yaw: 3.068
@@ -54,6 +55,7 @@ waypoints:
   yaw: 2.95
   radius: 1.3
   stop: false
+  profile: following  # WP10-18: 両側が芝生の細い通路. 追い越さず追従し, 塞がれたら待つ
 - x: -32.763
   y: 26.62
   yaw: 3.045
@@ -89,12 +91,13 @@ waypoints:
   yaw: -3.05
   radius: 1.3
   stop: false
-  profile: default
+  profile: following
 - x: -66.628
   y: 36.16
   yaw: 2.937
   radius: 1.3
   stop: false
+  profile: default
 - x: -69.083
   y: 38.526
   yaw: 1.748
