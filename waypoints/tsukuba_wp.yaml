@@ -2,48 +2,48 @@ waypoints:
 - x: 24.808
   y: 3.303
   yaw: 3.065
-  radius: 1.3
+  radius: 2.0
   stop: false
   profile: wide_road  # 確認走行区間 WP0-9: 広い舗装. 遅いロボットは追い越す
 - x: 14.834
   y: 3.982
   yaw: 3.068
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 4.87
   y: 4.753
   yaw: 3.037
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: -5.098
   y: 5.493
   yaw: 3.043
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: -10.346
   y: 6.214
   yaw: 2.913
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: -14.74
   y: 7.845
   yaw: 2.617
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: -17.927
   y: 11.13
   yaw: 2.044
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: -19.109
   y: 16.318
   yaw: 1.677
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: -19.985
   y: 21.393
   yaw: 1.954
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: -22.976
   y: 25.104
@@ -79,12 +79,12 @@ waypoints:
 - x: -50.986
   y: 34.106
   yaw: 2.723
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: -55.827
   y: 36.443
   yaw: 2.87
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: -60.414
   y: 36.681
@@ -107,33 +107,33 @@ waypoints:
 - x: -68.479
   y: 48.495
   yaw: 1.516
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: -67.824
   y: 58.472
   yaw: 1.475
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: -66.89
   y: 68.423
   yaw: 1.491
-  radius: 1.3
+  radius: 2.0
   stop: false
   profile: road_edge_keep
 - x: -65.939
   y: 78.37
   yaw: 1.448
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: -65.042
   y: 88.319
   yaw: 1.465
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: -64.586
   y: 98.279
   yaw: 1.387
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: -63.686
   y: 104.616
@@ -154,12 +154,12 @@ waypoints:
 - x: -52.231
   y: 107.474
   yaw: -0.387
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: -42.634
   y: 104.756
   yaw: -0.128
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: -32.745
   y: 103.346
@@ -249,6 +249,7 @@ waypoints:
   yaw: -0.184
   radius: 1.3
   stop: false
+  profile: speed_down_following
 - x: 44.832
   y: 69.502
   yaw: 0.172
@@ -259,6 +260,7 @@ waypoints:
   yaw: 0.103
   radius: 1.3
   stop: false
+  profile: speed_down
 - x: 66.14
   y: 72.986
   yaw: -0.109
@@ -269,132 +271,133 @@ waypoints:
   yaw: -0.196
   radius: 0.85
   stop: true
-  profile: default
+  profile: following
 - x: 84.604
   y: 66.175
   yaw: -0.398
   radius: 1.3
   stop: false
-- x: 93.88
-  y: 62.536
-  yaw: -0.274
-  radius: 1.3
-  stop: false
-- x: 103.466
-  y: 59.719
-  yaw: -0.228
-  radius: 1.3
-  stop: false
   profile: default
-- x: 109.095
-  y: 58.448
+- x: 94.221
+  y: 64.048
+  yaw: -0.274
+  radius: 2.0
+  stop: false
+- x: 104.149
+  y: 62.743
+  yaw: -0.228
+  radius: 2.0
+  stop: false
+  profile: wide_road
+- x: 109.181
+  y: 61.547
   yaw: -0.082
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 113.316
-  y: 58.331
+- x: 113.635
+  y: 61.364
   yaw: -0.074
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 123.257
-  y: 57.286
+- x: 123.317
+  y: 60.385
   yaw: -0.042
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 133.252
-  y: 57.092
+- x: 133.52
+  y: 60.08
   yaw: -0.034
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 143.202
-  y: 56.201
+- x: 143.664
+  y: 59.216
   yaw: -0.168
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 153.083
-  y: 54.687
+- x: 153.406
+  y: 57.77
   yaw: -0.085
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 157.358
-  y: 54.239
+- x: 157.595
+  y: 57.33
   yaw: -0.133
   radius: 0.85
   stop: true
-- x: 163.035
-  y: 53.804
+- x: 163.337
+  y: 56.889
   yaw: -0.042
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 172.98
-  y: 52.83
+- x: 173.512
+  y: 55.909
   yaw: -0.206
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 182.813
-  y: 51.13
+- x: 182.776
+  y: 54.33
   yaw: -0.045
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 185.941
-  y: 51.166
+- x: 186.112
+  y: 54.411
   yaw: 0.044
   radius: 0.85
   stop: true
-- x: 192.791
-  y: 50.805
+- x: 193.119
+  y: 53.988
   yaw: -0.133
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 202.706
-  y: 49.784
+- x: 202.911
+  y: 52.827
   yaw: -0.012
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 212.676
-  y: 49.114
+- x: 212.752
+  y: 51.963
   yaw: -0.083
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 222.65
-  y: 48.849
+- x: 222.91
+  y: 51.562
   yaw: 0.01
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 232.582
-  y: 47.896
+- x: 232.807
+  y: 50.612
   yaw: -0.157
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 242.539
-  y: 47.07
+- x: 242.61
+  y: 49.669
   yaw: -0.04
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 252.516
-  y: 46.798
+- x: 252.354
+  y: 49.393
   yaw: 0.081
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 262.487
-  y: 47.42
+- x: 262.39
+  y: 48.977
   yaw: 0.14
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 268.018
-  y: 48.337
+- x: 267.969
+  y: 49.116
   yaw: 0.282
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 271.996
   y: 50.164
   yaw: 0.388
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 275.501
   y: 52.26
   yaw: 1.016
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 276.48
   y: 57.962
@@ -405,7 +408,7 @@ waypoints:
 - x: 277.15
   y: 67.937
   yaw: 1.472
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 278.159
   y: 77.869
@@ -445,7 +448,7 @@ waypoints:
 - x: 284.479
   y: 147.408
   yaw: 1.334
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 285.68
   y: 157.315
@@ -489,19 +492,19 @@ waypoints:
   radius: 1.3
   stop: false
   profile: default
-- x: 306.845
-  y: 193.563
+- x: 305.924
+  y: 194.871
   yaw: 0.413
   radius: 1.3
   stop: false
   profile: road_edge_keep
-- x: 311.724
-  y: 196.999
+- x: 310.819
+  y: 198.319
   yaw: 0.645
   radius: 1.3
   stop: false
-- x: 314.668
-  y: 199.018
+- x: 314.598
+  y: 200.616
   yaw: 0.324
   radius: 1.3
   stop: false
@@ -515,22 +518,23 @@ waypoints:
   yaw: -0.056
   radius: 1.3
   stop: false
-- x: 340.979
-  y: 197.785
+- x: 340.983
+  y: 197.85
   yaw: 0.021
-  radius: 1.3
+  radius: 2.0
   stop: false
+  profile: road_edge_keep_poles
 - x: 350.948
   y: 197.203
   yaw: -0.054
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 360.871
   y: 196.027
   yaw: -0.122
-  radius: 1.3
+  radius: 2.0
   stop: false
-  profile: road_edge_keep
+  profile: road_edge_keep_poles
 - x: 370.817
   y: 195.063
   yaw: -0.122
@@ -539,12 +543,12 @@ waypoints:
 - x: 380.774
   y: 194.217
   yaw: -0.118
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 390.739
   y: 193.398
   yaw: -0.089
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 400.696
   y: 192.493
@@ -554,7 +558,7 @@ waypoints:
 - x: 410.661
   y: 191.701
   yaw: -0.043
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 420.622
   y: 190.89
@@ -564,12 +568,12 @@ waypoints:
 - x: 430.586
   y: 190.073
   yaw: -0.087
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 440.538
-  y: 189.168
+- x: 440.548
+  y: 189.28
   yaw: -0.08
-  radius: 1.3
+  radius: 2.0
   stop: false
   profile: default
 - x: 450.489
@@ -577,21 +581,21 @@ waypoints:
   yaw: -0.084
   radius: 1.3
   stop: false
-- x: 460.454
-  y: 187.437
+- x: 460.494
+  y: 187.802
   yaw: -0.143
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 470.368
   y: 186.359
   yaw: -0.107
-  radius: 1.3
+  radius: 2.0
   stop: false
   profile: road_edge_keep
 - x: 480.342
   y: 185.73
   yaw: -0.02
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 486.223
   y: 185.034
@@ -607,12 +611,12 @@ waypoints:
 - x: 493.452
   y: 179.295
   yaw: -0.908
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 495.543
   y: 175.09
   yaw: -1.22
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 497.064
   y: 169.281
@@ -627,7 +631,7 @@ waypoints:
 - x: 496.217
   y: 155.334
   yaw: -1.664
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 495.148
   y: 145.395
@@ -647,100 +651,100 @@ waypoints:
 - x: 493.146
   y: 115.92
   yaw: -1.543
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 492.504
   y: 105.945
   yaw: -1.661
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 491.503
   y: 95.997
   yaw: -1.686
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 490.545
   y: 86.045
   yaw: -1.699
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 489.682
   y: 76.087
   yaw: -1.685
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 488.815
   y: 66.129
   yaw: -1.615
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 487.982
   y: 56.173
   yaw: -1.638
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 487.119
   y: 46.213
   yaw: -1.637
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 486.692
   y: 36.24
   yaw: -1.628
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 485.686
   y: 26.299
   yaw: -1.645
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 484.85
   y: 16.336
   yaw: -1.674
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 484.088
   y: 6.366
   yaw: -1.638
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 483.368
   y: -3.6
   yaw: -1.644
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 482.518
-  y: -13.562
+- x: 483.314
+  y: -13.645
   yaw: -1.67
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 481.486
-  y: -23.507
+- x: 482.48
+  y: -23.618
   yaw: -1.679
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 480.372
-  y: -33.437
+- x: 482.444
+  y: -33.643
   yaw: -1.717
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 479.384
-  y: -43.383
+- x: 480.076
+  y: -43.431
   yaw: -1.664
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 478.689
-  y: -53.356
+- x: 479.469
+  y: -53.431
   yaw: -1.626
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 478.003
-  y: -60.53
+- x: 478.828
+  y: -60.89
   yaw: -1.753
   radius: 1.3
   stop: false
-- x: 476.906
-  y: -63.044
+- x: 477.639
+  y: -63.364
   yaw: -2.335
   radius: 1.3
   stop: false
@@ -752,27 +756,27 @@ waypoints:
 - x: 467.187
   y: -64.281
   yaw: -3.128
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 457.205
   y: -63.83
   yaw: 3.084
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 447.231
   y: -63.18
   yaw: 3.045
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 437.269
   y: -62.337
   yaw: 3.074
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 427.291
   y: -61.781
   yaw: 2.998
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 417.349
   y: -61.025
@@ -792,7 +796,7 @@ waypoints:
 - x: 413.583
   y: -53.285
   yaw: 1.504
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 414.947
   y: -43.386
@@ -807,7 +811,7 @@ waypoints:
 - x: 422.646
   y: -40.251
   yaw: -0.147
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 429.273
   y: -40.502
@@ -822,47 +826,47 @@ waypoints:
 - x: 435.426
   y: -35.848
   yaw: 1.146
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 436.219
   y: -30.563
   yaw: 1.52
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 437.055
   y: -20.607
   yaw: 1.471
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 438.106
   y: -10.668
   yaw: 1.478
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 438.997
   y: -0.723
   yaw: 1.517
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 439.732
   y: 9.244
   yaw: 1.46
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 440.561
   y: 19.208
   yaw: 1.461
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 441.115
   y: 29.188
   yaw: 1.473
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 441.833
   y: 39.161
   yaw: 1.464
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 443.152
   y: 44.557
@@ -883,17 +887,17 @@ waypoints:
 - x: 457.299
   y: 44.42
   yaw: -0.075
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 467.268
   y: 43.645
   yaw: -0.099
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 477.229
   y: 42.899
   yaw: -0.102
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 485.345
   y: 42.5
@@ -909,32 +913,32 @@ waypoints:
 - x: 487.176
   y: 53.627
   yaw: 1.474
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 487.975
   y: 63.591
   yaw: 1.497
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 488.894
   y: 73.547
   yaw: 1.449
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 489.741
   y: 83.509
   yaw: 1.481
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 490.743
   y: 93.457
   yaw: 1.461
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 491.534
   y: 103.422
   yaw: 1.474
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 492.242
   y: 113.397
@@ -954,22 +958,22 @@ waypoints:
 - x: 494.816
   y: 137.585
   yaw: 1.428
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 495.215
   y: 143.002
   yaw: 1.494
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 496.202
   y: 152.946
   yaw: 1.49
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 496.816
   y: 162.924
   yaw: 1.507
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 496.948
   y: 169.887
@@ -984,17 +988,17 @@ waypoints:
 - x: 494.361
   y: 177.536
   yaw: 2.053
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 491.198
   y: 181.173
   yaw: 2.53
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 487.164
   y: 184.567
   yaw: 2.712
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 482.71
   y: 185.566
@@ -1004,13 +1008,13 @@ waypoints:
 - x: 472.744
   y: 186.307
   yaw: 3.024
-  radius: 1.3
+  radius: 2.0
   stop: false
   profile: road_edge_keep
 - x: 462.82
   y: 187.384
   yaw: 3.116
-  radius: 1.3
+  radius: 2.0
   stop: false
   profile: default
 - x: 452.843
@@ -1021,12 +1025,12 @@ waypoints:
 - x: 442.878
   y: 188.569
   yaw: 2.933
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 432.991
   y: 189.936
   yaw: 3.011
-  radius: 1.3
+  radius: 2.0
   stop: false
   profile: road_edge_keep
 - x: 423.036
@@ -1037,7 +1041,7 @@ waypoints:
 - x: 413.082
   y: 191.638
   yaw: 3.044
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 403.124
   y: 192.529
@@ -1052,7 +1056,7 @@ waypoints:
 - x: 383.205
   y: 194.131
   yaw: 3.066
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 373.244
   y: 194.975
@@ -1067,12 +1071,12 @@ waypoints:
 - x: 353.334
   y: 196.773
   yaw: 3.044
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 343.394
   y: 197.829
   yaw: 3.043
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 333.443
   y: 198.555
@@ -1090,14 +1094,14 @@ waypoints:
   yaw: -3.01
   radius: 0.85
   stop: true
-- x: 312.943
-  y: 198.948
+- x: 312.557
+  y: 199.511
   yaw: -2.743
   radius: 1.3
   stop: false
   profile: road_edge_keep
-- x: 307.269
-  y: 194.86
+- x: 306.818
+  y: 195.501
   yaw: -2.66
   radius: 1.3
   stop: false
@@ -1149,7 +1153,7 @@ waypoints:
 - x: 284.793
   y: 149.57
   yaw: -1.599
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 283.789
   y: 139.633
@@ -1194,7 +1198,7 @@ waypoints:
 - x: 277.834
   y: 69.995
   yaw: -1.72
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 276.647
   y: 60.083
@@ -1219,118 +1223,119 @@ waypoints:
 - x: 270.062
   y: 45.843
   yaw: -3.012
-  radius: 1.3
+  radius: 2.0
   stop: false
-  profile: default
+  profile: wide_road
 - x: 267.284
   y: 45.866
   yaw: 3.1
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 257.308
-  y: 46.392
+- x: 257.346
+  y: 47.241
   yaw: 3.025
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 247.327
-  y: 46.835
+- x: 247.442
+  y: 47.929
   yaw: 3.106
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 237.386
-  y: 47.877
+- x: 237.472
+  y: 48.974
   yaw: 3.062
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 227.421
-  y: 48.661
+- x: 227.481
+  y: 49.759
   yaw: 3.114
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 217.45
-  y: 49.208
+- x: 217.385
+  y: 50.306
   yaw: -3.102
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 212.897
-  y: 48.937
+- x: 213.017
+  y: 50.03
   yaw: 3.108
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 207.492
-  y: 49.528
+- x: 207.622
+  y: 51.047
   yaw: 3.0
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 197.53900146484375
-  y: 50.38199996948242
+- x: 197.698
+  y: 51.899
   yaw: 3.012999996804054
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 192.326
-  y: 50.928
+- x: 192.489
+  y: 52.871
   yaw: 3.042
   radius: 0.85
   stop: true
-- x: 187.585
-  y: 51.326
+- x: 187.772
+  y: 53.267
   yaw: 3.046
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 177.634
-  y: 52.283
+- x: 177.731
+  y: 53.93
   yaw: 3.04
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 169.596
-  y: 52.757
+- x: 169.627
+  y: 54.407
   yaw: -3.091
   radius: 0.85
   stop: true
-- x: 164.297
-  y: 52.858
+- x: 164.526
+  y: 54.112
   yaw: 3.058
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 157.791
-  y: 54.044
+- x: 157.966
+  y: 55.307
   yaw: 2.965
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 147.89
-  y: 55.419
+- x: 148.067
+  y: 56.682
   yaw: 2.973
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 137.995
-  y: 56.803
+- x: 138.061
+  y: 57.801
   yaw: 3.076
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 128.021
-  y: 57.458
+- x: 128.112
+  y: 58.454
   yaw: 3.028
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 118.065
-  y: 58.365
+- x: 118.13
+  y: 59.313
   yaw: 3.041
-  radius: 1.3
+  radius: 2.0
   stop: false
-- x: 108.091
-  y: 59.051
+- x: 108.209
+  y: 59.994
   yaw: 3.062
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 98.176
   y: 60.292
   yaw: 2.947
-  radius: 1.3
+  radius: 2.0
   stop: false
+  profile: default
 - x: 88.644
   y: 63.258
   yaw: 2.768
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 85.246
   y: 64.874
@@ -1340,28 +1345,29 @@ waypoints:
 - x: 79.514
   y: 67.295
   yaw: 2.715
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 70.66
   y: 71.864
   yaw: 2.86
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 60.72
   y: 72.789
   yaw: 3.065
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 54.697
   y: 73.128
   yaw: -2.987
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 50.529
   y: 71.511
   yaw: -2.795
   radius: 0.85
   stop: true
+  profile: default
 - x: 44.836
   y: 69.059
   yaw: -2.432
@@ -1375,27 +1381,27 @@ waypoints:
 - x: 40.713
   y: 56.654
   yaw: -1.619
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 39.65
   y: 46.729
   yaw: -1.629
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 38.657
   y: 36.786
   yaw: -1.613
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 37.871
   y: 26.83
   yaw: -1.662
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 37.372
   y: 16.869
   yaw: -1.517
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 38.02
   y: 6.91
@@ -1410,7 +1416,7 @@ waypoints:
 - x: 46.566
   y: 3.485
   yaw: -0.064
-  radius: 1.3
+  radius: 2.0
   stop: false
 - x: 56.458
   y: 2.285
