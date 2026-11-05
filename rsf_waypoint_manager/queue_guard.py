@@ -44,6 +44,7 @@ class QueueGuard(Node):
         self.declare_parameter('static_margin', 0.5)
         self.declare_parameter('lethal', 100)
         self.declare_parameter('max_object_size', 1.5)
+        self.declare_parameter('use_route', False)  # 経路 (/plan) でなく waypoint の線に沿って前の物体を探す (経路が列を回り込んでも止まる)
         self.declare_parameter('min_object_size', 0.0)  # これより小さい塊 (コーン等) は前の物体として数えない
         # 前走物体として数えない静的マスク. 芝生マスク (keepout) を local costmap に入れると,
         # その縁が小さな塊として「前方の物体」に見えて停止するため, /map と同様に除外する
@@ -112,12 +113,17 @@ class QueueGuard(Node):
 
     def lane(self, rx, ry, lookahead):
         pts = list(self.plan)
-        if pts:
+        if self.get_parameter('use_route').value and self.route and pts:
+            # 経路の終点 (今向かっている waypoint) から先の waypoint の線 (往復で重なる区間の取り違えを防ぐ)
+            ex, ey = pts[-1]
+            j = min(range(len(self.route)), key=lambda i: math.hypot(self.route[i][0] - ex, self.route[i][1] - ey))
+            pts = [(rx, ry)] + self.route[j:j + 3]
+        elif pts:
             i0 = min(range(len(pts)), key=lambda i: math.hypot(pts[i][0] - rx, pts[i][1] - ry))
             pts = pts[i0:]
         else:
             pts = [(rx, ry)]
-        if self.route:
+        if self.route and not self.get_parameter('use_route').value:
             ex, ey = pts[-1]
             j = min(range(len(self.route)), key=lambda i: math.hypot(self.route[i][0] - ex, self.route[i][1] - ey))
             pts += self.route[j + 1:j + 4]
