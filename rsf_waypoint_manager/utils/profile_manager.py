@@ -6,7 +6,33 @@ from rclpy.parameter_client import AsyncParameterClient
 from rclpy.qos import DurabilityPolicy, QoSProfile
 from std_msgs.msg import Float32, String
 
+import copy
+import math
+
 DEFAULT = 'default'
+SIGNAL_QUEUE = 'signal_queue'
+QUEUE_ZONE = 5.0
+
+
+def near_stop(waypoints, index, within):
+    """waypoint index が停止点か, 経路に沿って within[m] 以内の先に停止点がある (信号待ちの列に並ぶ区間) なら True"""
+    dist = 0.0
+    for j in range(index, len(waypoints)):
+        if j > index:
+            dist += math.hypot(waypoints[j]['x'] - waypoints[j - 1]['x'], waypoints[j]['y'] - waypoints[j - 1]['y'])
+        if dist > within:
+            return False
+        if waypoints[j].get('stop'):
+            return True
+    return False
+
+
+def merge_profile(base, overlay):
+    """base のパラメータに overlay を重ねた新しいプロファイル (速度上限は base のまま)"""
+    merged = copy.deepcopy(base)
+    for remote, params in overlay['parameters'].items():
+        merged['parameters'].setdefault(remote, {}).update(params)
+    return merged
 
 
 def load_profiles(path, waypoints):
@@ -65,10 +91,18 @@ class ProfileManager:
         self.speed_pub.publish(msg)
 
     def profile_for(self, index):
+        name = DEFAULT
         for waypoint in reversed(self.waypoints[:index + 1]):
             if 'profile' in waypoint:
-                return waypoint['profile']
-        return DEFAULT
+                name = waypoint['profile']
+                break
+        # 信号の停止点へ向かう最後の区間は, その区間のプロファイルに追い越さない設定 (signal_queue) を重ねる
+        if SIGNAL_QUEUE in self.profiles and name != SIGNAL_QUEUE and near_stop(self.waypoints, index, QUEUE_ZONE):
+            merged = f'{name}+{SIGNAL_QUEUE}'
+            if merged not in self.profiles:
+                self.profiles[merged] = merge_profile(self.profiles[name], self.profiles[SIGNAL_QUEUE])
+            return merged
+        return name
 
     def client(self, remote):
         if remote not in self.clients:

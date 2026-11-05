@@ -37,7 +37,7 @@ class WaypointEditor:
                 stop, MenuHandler.CHECKED if waypoint['stop'] else MenuHandler.UNCHECKED)
             profile_menu = menu.insert(f'Profile: {self.profiles.profile_for(waypoint_id)}')
             explicit = waypoint.get('profile')
-            for name in [None] + list(self.profiles.profiles):
+            for name in [None] + [p for p in self.profiles.profiles if '+' not in p]:
                 entry = menu.insert(
                     name or 'Inherit', parent=profile_menu,
                     callback=lambda feedback, name=name: self.set_profile(feedback, name))
