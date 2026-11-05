@@ -21,7 +21,7 @@ from std_srvs.srv import Trigger
 from tf2_ros import Buffer, TransformListener
 
 from rsf_waypoint_manager.yield_logic import (
-    align_angle, blocked_ahead, choose_fixed_refuge, cluster_points, find_leader, find_retreat, find_oncoming, find_refuge, follow_speed,
+    align_angle, backup_distance, blocked_ahead, choose_fixed_refuge, cluster_points, find_leader, find_retreat, find_oncoming, find_refuge, follow_speed,
     LeaderMonitor, near_stop_ahead, next_waypoint_index, obstacle_layer_action, points_near, predict_track, route_lane,
     should_resend_refuge, should_skip_waypoint, smooth_limit, stalled, Tracker, tracks_in_frame, YieldStateMachine)
 
@@ -65,7 +65,7 @@ class YieldGuard(Node):
         self.declare_parameter('refuge_step', 0.5)
         self.declare_parameter('refuge_min_sep', 1.0)  # 相手の横位置からこれ未満の点は相手の進路から外れきれない
         self.declare_parameter('skip_blocked_waypoint', True)
-        self.declare_parameter('unstick_enabled', True)  # 正面を塞がれて 8 秒動けなければ 0.4m 下がって走り直す
+        self.declare_parameter('unstick_enabled', True)  # 正面を塞がれて 8 秒動けなければ下がって走り直す
         # 固定の退避点 (空なら waypoints_file の <name>_wp.yaml に対する <name>_refuge_points.yaml)
         self.declare_parameter('refuge_points_file', '')
         self.declare_parameter('refuge_behind', 3.0)  # 前方と真横に無いときだけ後方を探す範囲
@@ -133,6 +133,7 @@ class YieldGuard(Node):
         self.spin = ActionClient(self, Spin, 'spin')
         self.backup = ActionClient(self, BackUp, 'backup')
         self.motion, self.unstick_index, self.held = [], None, (0.0, False)
+        self.last_backup, self.backup_dist = None, 0.4
         self.create_subscription(Float32, '/waypoint_navigator/speed_override', self.on_override, 10)
         self.state_pub = self.create_publisher(String, '~/state', transient)
         self.speed_pub = self.create_publisher(Float32, '/waypoint_navigator/speed_override', 10)
@@ -445,7 +446,7 @@ class YieldGuard(Node):
         self.held = (self.get_clock().now().nanoseconds * 1e-9, 0.0 < msg.data < 0.5)
 
     def check_stall(self, xy, rx, ry, now):
-        """正面 (0.9m 以内, 横 0.65m 以内) を塞がれて 8 秒ほとんど動けなければ, 一時停止して 0.4m 下がり, 同じ waypoint から走り直す"""
+        """正面 (0.9m 以内, 横 0.65m 以内) を塞がれて 8 秒ほとんど動けなければ, 一時停止して下がり (同じ場所で繰り返すほど長く), 同じ waypoint から走り直す"""
         self.motion = [m for m in self.motion if m[0] >= now - 10.0] + [(now, (rx, ry))]
         held = self.held[1] and now - self.held[0] < 1.0
         if (not self.get_parameter('unstick_enabled').value or self.unstick_index is not None or held
@@ -458,15 +459,17 @@ class YieldGuard(Node):
             return
         if not blocked_ahead(xy, pose, 0.9, 0.65):
             return
-        self.get_logger().info(f'stuck in front of an object, backing up and retrying waypoint {self.target_index}')
+        self.backup_dist, self.last_backup = backup_distance(self.last_backup, now, (rx, ry))
+        self.get_logger().info(f'stuck in front of an object, backing up {self.backup_dist:.1f} m '
+                               f'and retrying waypoint {self.target_index}')
         self.unstick_index, self.motion = self.target_index, []
         self.pause_cli.call_async(Trigger.Request())
 
     def back_up(self):
         index, self.unstick_index = self.unstick_index, -1
         goal = BackUp.Goal()
-        goal.target.x, goal.speed = 0.4, 0.1
-        goal.time_allowance = Duration(sec=8)
+        goal.target.x, goal.speed = self.backup_dist, 0.1
+        goal.time_allowance = Duration(sec=int(self.backup_dist / 0.1) + 5)
 
         def finish(_=None):
             self.unstick_index, self.motion = None, []

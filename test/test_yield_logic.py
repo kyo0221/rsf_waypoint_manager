@@ -647,3 +647,16 @@ def test_blocked_ahead_checks_points_in_front_of_robot():
     assert blocked_ahead([(0.4, 0.1)], (0.0, 0.0, 0.0), 0.5, 0.45)
     assert not blocked_ahead([(-0.4, 0.0), (0.4, 0.6), (0.8, 0.0)], (0.0, 0.0, 0.0), 0.5, 0.45)
     assert blocked_ahead([(0.0, 0.4)], (0.0, 0.0, math.pi / 2), 0.5, 0.45)
+
+
+def test_backup_distance_grows_when_stuck_again_at_same_place():
+    from rsf_waypoint_manager.yield_logic import backup_distance
+    assert backup_distance(None, 10.0, (0.0, 0.0)) == (0.4, (10.0, (0.0, 0.0), 1))
+    d, last = backup_distance((10.0, (0.0, 0.0), 1), 30.0, (0.3, 0.0))
+    assert d == pytest.approx(0.8) and last[2] == 2
+    d, last = backup_distance((30.0, (0.3, 0.0), 3), 50.0, (0.3, 0.0))
+    assert d == pytest.approx(1.2)
+    d, last = backup_distance((10.0, (0.0, 0.0), 2), 100.0, (0.0, 0.0))
+    assert d == pytest.approx(0.4)
+    d, last = backup_distance((10.0, (0.0, 0.0), 2), 20.0, (3.0, 0.0))
+    assert d == pytest.approx(0.4)

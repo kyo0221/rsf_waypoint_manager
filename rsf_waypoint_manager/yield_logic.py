@@ -427,3 +427,11 @@ def blocked_ahead(points, pose, ahead, half_width):
         if 0.0 < fx <= ahead and abs(fy) <= half_width:
             return True
     return False
+
+
+def backup_distance(last, now, xy, step=0.4, limit=1.2, near=1.0, within=60.0):
+    """後退する距離と記録 (時刻, 位置, 回数). 前回と同じ場所 (near[m] 以内, within[s] 以内) でまた詰まったら step ずつ伸ばす"""
+    count = 1
+    if last is not None and now - last[0] <= within and math.hypot(xy[0] - last[1][0], xy[1] - last[1][1]) <= near:
+        count = last[2] + 1
+    return min(step * count, limit), (now, xy, count)
