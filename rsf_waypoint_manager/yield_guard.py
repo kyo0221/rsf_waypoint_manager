@@ -128,6 +128,7 @@ class YieldGuard(Node):
         self.limit_value, self.limit_time = None, 0.0
         self.target_index = None
         self.skipped_index, self.skip_to = None, None
+        self.blocked_wp = (None, 0.0)
         self.obstacle_xy = np.zeros((0, 2))
         self.last_following = -math.inf
         self.nav = ActionClient(self, NavigateToPose, 'navigate_to_pose')
@@ -390,7 +391,15 @@ class YieldGuard(Node):
         if (not self.get_parameter('skip_blocked_waypoint').value or k is None or k >= len(self.route) - 1
                 or k == self.skipped_index or self.nav_status != 'running' or self.machine.state != 'idle'):
             return
-        if should_skip_waypoint(self.route[k], self.stops[k], (rx, ry), xy, 0.6, 7.0):
+        # 動いている物体 (追従中の前のロボットなど) が通っただけでは飛ばさない: 追従中は見ない, 3 秒続けて塞がれていたら飛ばす
+        now = self.get_clock().now().nanoseconds * 1e-9
+        blocked = (self.leader_last is None
+                   and should_skip_waypoint(self.route[k], self.stops[k], (rx, ry), xy, 0.6, 7.0))
+        if not blocked or self.blocked_wp[0] != k:
+            self.blocked_wp = (k, now) if blocked else (None, now)
+            return
+        if now - self.blocked_wp[1] >= 3.0:
+            self.blocked_wp = (None, now)
             self.skipped_index, self.skip_to = k, k + 1
             self.get_logger().info(f'waypoint {k} is occupied by an object, skipping to waypoint {k + 1}')
             self.pause_cli.call_async(Trigger.Request())
