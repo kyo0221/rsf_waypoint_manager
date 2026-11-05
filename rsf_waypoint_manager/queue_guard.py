@@ -44,6 +44,7 @@ class QueueGuard(Node):
         self.declare_parameter('static_margin', 0.5)
         self.declare_parameter('lethal', 100)
         self.declare_parameter('max_object_size', 1.5)
+        self.declare_parameter('min_object_size', 0.0)  # これより小さい塊 (コーン等) は前の物体として数えない
         # 前走物体として数えない静的マスク. 芝生マスク (keepout) を local costmap に入れると,
         # その縁が小さな塊として「前方の物体」に見えて停止するため, /map と同様に除外する
         self.declare_parameter('static_mask_topics', ['/map', '/grass_filter_mask'])
@@ -92,8 +93,9 @@ class QueueGuard(Node):
             labels, count = ndimage.label(lethal, structure=np.ones((3, 3)))
             small = np.zeros(count + 1, dtype=bool)
             limit = self.get_parameter('max_object_size').value / self.local.info.resolution
+            lower = self.get_parameter('min_object_size').value / self.local.info.resolution
             for k, sl in enumerate(ndimage.find_objects(labels), start=1):
-                if sl is not None and max(sl[0].stop - sl[0].start, sl[1].stop - sl[1].start) <= limit:
+                if sl is not None and lower <= max(sl[0].stop - sl[0].start, sl[1].stop - sl[1].start) <= limit:
                     small[k] = True
             self.objects = small[labels]
         return self.objects

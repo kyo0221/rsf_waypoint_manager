@@ -30,3 +30,12 @@ def test_split_deferred_holds_controller_params_while_pausing_and_flushes_later(
     assert send == {'/controller_server': {'a': 1, 'b': 5}} and held == {}
     send, held = split_deferred({}, {'/controller_server': {'a': 1}}, defer=False)
     assert send == {'/controller_server': {'a': 1}} and held == {}
+
+
+def test_profile_for_skips_signal_queue_while_oncoming_robot_blocks():
+    # 待避の原因になった対向ロボットが前に残っている間は, 待機列とみなさず追い越さない設定を重ねない
+    from rsf_waypoint_manager.utils.profile_manager import queue_profile_name
+    assert queue_profile_name('wide_road', near=True, oncoming=False, available=True) == 'wide_road+signal_queue'
+    assert queue_profile_name('wide_road', near=True, oncoming=True, available=True) == 'wide_road'
+    assert queue_profile_name('wide_road', near=False, oncoming=False, available=True) == 'wide_road'
+    assert queue_profile_name('wide_road', near=True, oncoming=False, available=False) == 'wide_road'

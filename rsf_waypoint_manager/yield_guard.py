@@ -16,7 +16,7 @@ from rclpy.qos import DurabilityPolicy, QoSProfile, qos_profile_sensor_data
 from scipy import ndimage
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs_py import point_cloud2
-from std_msgs.msg import Float32, String
+from std_msgs.msg import Bool, Float32, String
 from std_srvs.srv import Trigger
 from tf2_ros import Buffer, TransformListener
 
@@ -136,6 +136,8 @@ class YieldGuard(Node):
         self.last_backup, self.backup_dist = None, 0.4
         self.create_subscription(Float32, '/waypoint_navigator/speed_override', self.on_override, 10)
         self.state_pub = self.create_publisher(String, '~/state', transient)
+        self.oncoming_pub = self.create_publisher(Bool, '~/oncoming_ahead', 10)
+        self.blocker = None
         self.speed_pub = self.create_publisher(Float32, '/waypoint_navigator/speed_override', 10)
         self.create_timer(0.1, self.tick)
 
@@ -231,6 +233,7 @@ class YieldGuard(Node):
         self.waiting_for = False
         if self.target_last is not None:
             last = tracks_in_frame([self.target_last], *map_odom)[0]
+            self.blocker = ((last.x, last.y), now)
             s, lateral = lane.project(last.x, last.y)
             ahead_of_robot = s > robot_s and abs(lateral) <= 2.0 * half
             if now - self.target_last.t <= self.get_parameter('target_hold').value:
@@ -372,6 +375,15 @@ class YieldGuard(Node):
                 self.goal_handle.cancel_goal_async().add_done_callback(lambda _: self.after(0.5, self.leave_refuge))
                 self.goal_handle = None
         self.state_pub.publish(String(data=self.machine.state))
+        self.oncoming_pub.publish(Bool(data=self.oncoming_ahead(now)))
+
+    def oncoming_ahead(self, now):
+        """待避の原因になった対向ロボットが, 最後に見えた位置 (前方 8m 以内のレーン上) にまだ残っていれば True"""
+        if self.blocker is None or self.lane is None or self.obstacle_xy is None or now - self.blocker[1] > 60.0:
+            return False
+        s, lateral = self.lane.project(*self.blocker[0])
+        return (0.0 < s - self.robot_s <= 8.0 and abs(lateral) <= 1.5
+                and points_near(self.obstacle_xy, self.blocker[0], 1.0))
 
     def after(self, delay, callback):
         timer = None

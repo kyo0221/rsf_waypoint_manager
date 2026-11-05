@@ -4,7 +4,7 @@ from nav2_msgs.msg import SpeedLimit
 from rclpy.parameter import Parameter
 from rclpy.parameter_client import AsyncParameterClient
 from rclpy.qos import DurabilityPolicy, QoSProfile
-from std_msgs.msg import Float32, String
+from std_msgs.msg import Bool, Float32, String
 
 import copy
 import math
@@ -43,6 +43,13 @@ def split_deferred(updates, held, defer):
         for remote in list(held):
             send[remote] = held.pop(remote)
     return send, held
+
+
+def queue_profile_name(name, near, oncoming, available):
+    """停止点へ向かう最後の区間なら signal_queue を重ねた名前. 対向ロボットが前に残っている間は重ねない"""
+    if available and near and not oncoming and name != SIGNAL_QUEUE:
+        return f'{name}+{SIGNAL_QUEUE}'
+    return name
 
 
 def merge_profile(base, overlay):
@@ -93,7 +100,12 @@ class ProfileManager:
         self.override = 0.0
         self.approach = 0.0
         node.create_subscription(Float32, '~/speed_override', self.on_override, 10)
+        self.oncoming = False
+        node.create_subscription(Bool, '/yield_guard/oncoming_ahead', self.on_oncoming, 10)
         node.create_timer(0.1, self.publish_speed)
+
+    def on_oncoming(self, msg):
+        self.oncoming = msg.data
 
     def on_override(self, msg):
         self.override = msg.data
@@ -115,13 +127,11 @@ class ProfileManager:
             if 'profile' in waypoint:
                 name = waypoint['profile']
                 break
-        # 信号の停止点へ向かう最後の区間は, その区間のプロファイルに追い越さない設定 (signal_queue) を重ねる
-        if SIGNAL_QUEUE in self.profiles and name != SIGNAL_QUEUE and near_stop(self.waypoints, index, QUEUE_ZONE):
-            merged = f'{name}+{SIGNAL_QUEUE}'
-            if merged not in self.profiles:
-                self.profiles[merged] = merge_profile(self.profiles[name], self.profiles[SIGNAL_QUEUE])
-            return merged
-        return name
+        merged = queue_profile_name(name, near_stop(self.waypoints, index, QUEUE_ZONE), self.oncoming,
+                                    SIGNAL_QUEUE in self.profiles)
+        if merged not in self.profiles:
+            self.profiles[merged] = merge_profile(self.profiles[name], self.profiles[SIGNAL_QUEUE])
+        return merged
 
     def client(self, remote):
         if remote not in self.clients:
