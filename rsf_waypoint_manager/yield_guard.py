@@ -357,12 +357,26 @@ class YieldGuard(Node):
         elif action == 'resume':
             self.target_id = None
             self.target_last = None
-            if self.goal_handle is not None:
-                self.goal_handle.cancel_goal_async()
+            if self.goal_handle is None:
+                self.leave_refuge()
+            else:
+                # 待機点へのゴールの取り消し (MPPI の reset) と再開時のパラメータ変更 (同じ reset) が重ならないよう, 取り消しの完了から 0.5 秒おく
+                self.goal_handle.cancel_goal_async().add_done_callback(lambda _: self.after(0.5, self.leave_refuge))
                 self.goal_handle = None
-            if not self.turn_to_exit():
-                self.continue_route()
         self.state_pub.publish(String(data=self.machine.state))
+
+    def after(self, delay, callback):
+        timer = None
+
+        def fire():
+            timer.cancel()
+            self.destroy_timer(timer)
+            callback()
+        timer = self.create_timer(delay, fire)
+
+    def leave_refuge(self):
+        if not self.turn_to_exit():
+            self.continue_route()
 
     def turn_to_exit(self):
         """待機点から再開する前に, レーンへ戻る向き (2m 先のレーン中央) へその場で旋回する. 旋回したら True"""

@@ -11,7 +11,7 @@ import math
 
 DEFAULT = 'default'
 SIGNAL_QUEUE = 'signal_queue'
-QUEUE_ZONE = 5.0
+QUEUE_ZONE = 0.0
 
 
 def near_stop(waypoints, index, within):
@@ -25,6 +25,24 @@ def near_stop(waypoints, index, within):
         if waypoints[j].get('stop'):
             return True
     return False
+
+
+DEFERRED_REMOTES = ('/controller_server',)
+
+
+def split_deferred(updates, held, defer):
+    """{remote: {param: value}} を今送る分と持っておく分に分ける (defer 中は controller_server 宛てを持つ)"""
+    held = {remote: dict(params) for remote, params in held.items()}
+    send = {}
+    for remote, params in updates.items():
+        if defer and remote in DEFERRED_REMOTES:
+            held.setdefault(remote, {}).update(params)
+        else:
+            send[remote] = {**held.pop(remote, {}), **params}
+    if not defer:
+        for remote in list(held):
+            send[remote] = held.pop(remote)
+    return send, held
 
 
 def merge_profile(base, overlay):
@@ -70,6 +88,7 @@ class ProfileManager:
         self.clients = {}
         self.defaults = {}
         self.waited = set()
+        self.deferred = {}
         self.current = None
         self.override = 0.0
         self.approach = 0.0
@@ -133,8 +152,11 @@ class ProfileManager:
             for name, value in zip(names, future.result().values):
                 self.defaults[(remote, name)] = value
 
-    def apply(self, name):
+    def apply(self, name, defer=False):
+        # defer: 経路追従の取り消しと同時の MPPI の reset とパラメータ変更の reset が別スレッドで重なりヒープが壊れるのを避ける
         if name == self.current:
+            if not defer:
+                self.send_updates({})
             return
         profile = self.profiles[name]
         previous = self.profiles[self.current]['parameters'] if self.current else {}
@@ -151,17 +173,22 @@ class ProfileManager:
             for param in params:
                 key = (remote, param)
                 if key not in target and key in self.defaults:
-                    updates.setdefault(remote, []).append(self.default_msg(key))
+                    updates.setdefault(remote, {})[param] = self.default_msg(key)
         for (remote, param), value in target.items():
-            updates.setdefault(remote, []).append(Parameter(param, value=value).to_parameter_msg())
-        for remote, params in updates.items():
-            self.client(remote).set_parameters(params, callback=self.on_set(remote))
+            updates.setdefault(remote, {})[param] = Parameter(param, value=value).to_parameter_msg()
+        self.send_updates(updates, defer)
         self.node.get_logger().info(
             f'profile {name}: speed_limit {profile["speed_limit"]}, '
             f'parameters {profile["parameters"] or "default"}')
 
+    def send_updates(self, updates, defer=False):
+        send, self.deferred = split_deferred(updates, self.deferred, defer)
+        for remote, params in send.items():
+            self.client(remote).set_parameters(list(params.values()), callback=self.on_set(remote))
+
     def reset(self):
-        self.apply(DEFAULT)
+        """一時停止・終了時: controller_server 宛ては次の走行開始まで送らない"""
+        self.apply(DEFAULT, defer=True)
 
     def default_msg(self, key):
         msg = Parameter(key[1]).to_parameter_msg()

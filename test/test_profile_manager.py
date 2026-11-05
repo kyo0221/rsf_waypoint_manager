@@ -19,3 +19,14 @@ def test_merge_profile_overlays_parameters_and_keeps_base_ones():
     merged = merge_profile(base, overlay)
     assert merged == {'speed_limit': 0.5, 'parameters': {'/a': {'x': 1, 'y': 3}, '/b': {'z': True}}}
     assert base['parameters']['/a'] == {'x': 1, 'y': 2}
+
+
+def test_split_deferred_holds_controller_params_while_pausing_and_flushes_later():
+    # 一時停止 (経路追従の取り消しと同時) の間は controller_server 宛てを送らずに持っておき, 次の走行開始で新しい値を優先して送る
+    from rsf_waypoint_manager.utils.profile_manager import split_deferred
+    send, held = split_deferred({'/controller_server': {'a': 1, 'b': 2}, '/costmap': {'c': 3}}, {}, defer=True)
+    assert send == {'/costmap': {'c': 3}} and held == {'/controller_server': {'a': 1, 'b': 2}}
+    send, held = split_deferred({'/controller_server': {'b': 5}}, held, defer=False)
+    assert send == {'/controller_server': {'a': 1, 'b': 5}} and held == {}
+    send, held = split_deferred({}, {'/controller_server': {'a': 1}}, defer=False)
+    assert send == {'/controller_server': {'a': 1}} and held == {}
