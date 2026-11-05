@@ -355,14 +355,14 @@ class YieldGuard(Node):
                     self.queue_saved = (f1.result().values[0].bool_value, f2.result().values[0].bool_value)
                 except Exception:
                     self.queue_saved = (True, False)
-                # 追従で層を切っている最中なら, 区間を出たときは層を戻す (追従の判定がまた切る)
-                if self.layer_off:
-                    self.queue_saved = (True, self.queue_saved[1])
-                    self.layer_off = False
-                if self.queue_saved == (False, True):
+                if self.queue_saved[1]:
                     # もともと追い越さない設定: 何も変えず, 出るときも戻さない (先のプロファイル切り替えを上書きしないため)
                     self.queue_saved = 'untouched'
                     return
+                # 追従で層を切っている最中なら, 区間を出たときは層を戻す (追従の判定がまた切る)
+                if self.layer_off:
+                    self.queue_saved = (True, False)
+                    self.layer_off = False
                 self.apply_queue_params()
         f1.add_done_callback(done)
         f2.add_done_callback(done)

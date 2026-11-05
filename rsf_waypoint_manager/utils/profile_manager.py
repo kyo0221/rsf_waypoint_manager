@@ -43,6 +43,7 @@ class ProfileManager:
             String, '~/profile', QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
         self.clients = {}
         self.defaults = {}
+        self.waited = set()
         self.current = None
         self.override = 0.0
         self.approach = 0.0
@@ -84,7 +85,10 @@ class ProfileManager:
             if not names:
                 continue
             client = self.client(remote)
-            if not client.wait_for_services(timeout_sec=2.0):
+            # 初回は起動の遅いノードを待つ (後でプロファイル適用後の値を既定値として取り込むと元に戻せなくなる)
+            timeout = 2.0 if remote in self.waited else 30.0
+            self.waited.add(remote)
+            if not client.wait_for_services(timeout_sec=timeout):
                 self.node.get_logger().error(f'parameter services of {remote} not available')
                 continue
             future = client.get_parameters(names)
