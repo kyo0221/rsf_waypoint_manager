@@ -59,40 +59,37 @@ class YieldGuard(Node):
         self.declare_parameter('confirm_time', 0.5)
         self.declare_parameter('max_wait', 20.0)
         self.declare_parameter('cooldown', 5.0)
-        self.declare_parameter('margin', 2.0)
-        # 待機点はその場で探す: ロボットの前方斜め前 (前方 refuge_ahead[m] まで, 左右 refuge_lateral[m]) を refuge_step 刻み
+        # その場の探索: 前方斜め前 (前方 refuge_ahead[m] まで, 左右 refuge_lateral[m]) を refuge_step 刻み
         self.declare_parameter('refuge_ahead', 3.0)
         self.declare_parameter('refuge_lateral', [0.5, 2.0])  # 0.5 からにしてレーン内の小さな寄りも使う (ポールの間など)
         self.declare_parameter('refuge_step', 0.5)
         self.declare_parameter('refuge_min_sep', 1.0)  # 相手の横位置からこれ未満の点は相手の進路から外れきれない
         self.declare_parameter('skip_blocked_waypoint', True)
-        # 信号の停止点の手前 queue_zone[m] は待機列を追い越さない: global の障害物層を切り queue_guard で後ろに止まる (0 で無効)
-        self.declare_parameter('queue_zone', 12.0)
-        self.declare_parameter('refuge_behind', 3.0)  # 前方と真横に無いときだけ後方を探す範囲
-        # search (その場で探索) / fixed (固定の退避点) / hybrid (固定の退避点をその場で確かめ, 駄目なら探索).
-        # 対向 47 シーンの比較で hybrid が到達 47/47, 停止時間が最短 (固定のみは停止が長い回, 探索のみは失敗 1 回)
-        self.declare_parameter('refuge_mode', 'hybrid')
-        # 空なら waypoints_file の <name>_wp.yaml に対する <name>_refuge_points.yaml を使う
+        # 停止点の手前 queue_zone[m] 以内へ向かう間は待機列を追い越さない (global の障害物層を切り queue_guard で止まる. 0 で無効)
+        self.declare_parameter('queue_zone', 5.0)
+        # 固定の退避点 (空なら waypoints_file の <name>_wp.yaml に対する <name>_refuge_points.yaml)
         self.declare_parameter('refuge_points_file', '')
+        self.declare_parameter('refuge_behind', 3.0)  # 前方と真横に無いときだけ後方を探す範囲
         self.declare_parameter('refuge_fixed_ahead', 5.0)
         self._refuge_points_path, self._refuge_points = None, []
         self.declare_parameter('refuge_max_cost', 98)  # local costmap の値 (0-100). 99 以上はロボット中心が置けない
         self.declare_parameter('static_margin', 0.4)
         self.declare_parameter('min_height', 0.3)
         self.declare_parameter('max_height', 2.0)
-        self.route, self.stops = [], []
+        self.route, self.stops, self.profiles = [], [], []
         path = self.get_parameter('waypoints_file').value
         if path:
             with open(path) as f:
                 waypoints = yaml.safe_load(f)['waypoints']
             self.route = [(float(w['x']), float(w['y'])) for w in waypoints]
             self.stops = [bool(w.get('stop', False)) for w in waypoints]
+            self.profiles = [w.get('profile') for w in waypoints]
         self.tracker = Tracker(window=2.0, min_span=1.0)
         self.machine = YieldStateMachine(
             self.get_parameter('clear_time').value, self.get_parameter('max_wait').value,
             self.get_parameter('cooldown').value, confirm_time=self.get_parameter('confirm_time').value)
         self.oncoming = None
-        self.decision = None
+        self.decision_lane = None
         self.target_id = None
         self.target_last = None
         self.leader_last = None
@@ -241,8 +238,7 @@ class YieldGuard(Node):
                 # 追跡が途切れて (ID が変わる等) 見失っても, 最後に見えた位置に物体が残っていれば相手はまだいる
                 self.waiting_for = True
         if self.machine.state == 'waiting' and not self.waiting_for:
-            # 待機中は, 前方 10m 以内をゆっくり (0.1m/s 以上) でも近づいてくる物体がいれば相手として追い直す.
-            # 向きをそろえる旋回で ID が変わったり, 相手が減速して min_speed を下回ったりしても再開しないため
+            # 待機中は前方 10m 以内を 0.1m/s 以上で近づく物体を相手として追い直す (旋回での ID 変化や相手の減速で再開しないため)
             slow = find_oncoming(lane, robot_s, tracks, 2.0 * half, 10.0, 0.1,
                                  self.get_parameter('min_hits').value, now=now)
             if slow is not None:
@@ -312,9 +308,7 @@ class YieldGuard(Node):
         self.update_obstacle_layer()
 
     def update_queue_zone(self):
-        """信号の停止点の手前 queue_zone[m] に入ったら, global の障害物層を切って queue_guard を有効にする (待機列を回り込んで
-        追い越さず, 最後尾の後ろで止まる). 停止点を過ぎたら入る前の値に戻す. 区間内で waypoint が変わるたびに設定し直す
-        (プロファイルの切り替えで上書きされても戻すため)"""
+        """停止点の手前 queue_zone[m] に入ったら障害物層を切って queue_guard を有効にし, 区間を出たら元の値に戻す"""
         within = self.get_parameter('queue_zone').value
         k = self.target_index
         if within <= 0.0 or k is None or not self.route:
@@ -366,19 +360,25 @@ class YieldGuard(Node):
                     self.queue_saved = (True, self.queue_saved[1])
                     self.layer_off = False
                 if self.queue_saved == (False, True):
-                    # もともと追い越さない設定 (確認走行区間の待機列のプロファイル等): 何も変えず, 出るときも戻さない.
-                    # 停止点の先のプロファイルの切り替えを上書きしないため
+                    # もともと追い越さない設定: 何も変えず, 出るときも戻さない (先のプロファイル切り替えを上書きしないため)
                     self.queue_saved = 'untouched'
                     return
                 self.apply_queue_params()
         f1.add_done_callback(done)
         f2.add_done_callback(done)
 
-    def set_bool(self, client, name, value):
+    @staticmethod
+    def set_parameter(client, name, ptype, **value):
         request = SetParameters.Request()
-        request.parameters = [ParameterMsg(name=name, value=ParameterValue(
-            type=ParameterType.PARAMETER_BOOL, bool_value=bool(value)))]
-        client.call_async(request)
+        request.parameters = [ParameterMsg(name=name, value=ParameterValue(type=ptype, **value))]
+        return client.call_async(request)
+
+    def set_bool(self, client, name, value):
+        return self.set_parameter(client, name, ParameterType.PARAMETER_BOOL, bool_value=bool(value))
+
+    def set_start_index(self, index):
+        future = self.set_parameter(self.param_cli, 'start_index', ParameterType.PARAMETER_INTEGER, integer_value=int(index))
+        future.add_done_callback(lambda _: self.start_cli.call_async(Trigger.Request()))
 
     def update_obstacle_layer(self):
         """動いている前走ロボットを global の障害物層に載せると追い越す経路を引くので, 追従中は層を切る"""
@@ -398,10 +398,7 @@ class YieldGuard(Node):
         elif action is not None:
             self.layer_off = action == 'disable'
             self.get_logger().info(f'global obstacle layer {"off" if self.layer_off else "on"} (following)')
-            request = SetParameters.Request()
-            request.parameters = [ParameterMsg(name='obstacle_layer.enabled', value=ParameterValue(
-                type=ParameterType.PARAMETER_BOOL, bool_value=not self.layer_off))]
-            self.global_param_cli.call_async(request)
+            self.set_bool(self.global_param_cli, 'obstacle_layer.enabled', not self.layer_off)
 
     def tick(self):
         now = self.get_clock().now().nanoseconds * 1e-9
@@ -417,7 +414,7 @@ class YieldGuard(Node):
             paused=self.nav_status == 'paused', oncoming=self.oncoming is not None, goal_done=self.goal_done,
             waiting_for=self.waiting_for)
         if action == 'pause':
-            self.decision = (self.lane, self.oncoming.s)
+            self.decision_lane = self.lane
             self.decision_xy = (self.oncoming.x, self.oncoming.y)
             self.target_id = self.oncoming.id
             self.target_last = None
@@ -437,8 +434,7 @@ class YieldGuard(Node):
         self.state_pub.publish(String(data=self.machine.state))
 
     def turn_to_exit(self):
-        """待機点から再開する前に, レーンへ戻る向き (2m 先のレーン中央) へその場で旋回する.
-        正面にコーンなどがあると MPPI が前進しながら曲がる軌道を選べずに止まるため. 旋回したら True"""
+        """待機点から再開する前に, レーンへ戻る向き (2m 先のレーン中央) へその場で旋回する. 旋回したら True"""
         if self.refuge is None or self.lane is None or self.robot_xy is None:
             return False
         try:
@@ -466,18 +462,18 @@ class YieldGuard(Node):
         handle.get_result_async().add_done_callback(lambda _: self.continue_route())
 
     def skip_blocked_waypoint(self, xy, rx, ry):
-        """向かっている waypoint (停止点以外) の上に物体があれば, 一時停止して次の waypoint から再開する.
-        物体の上の waypoint に向かうと物体の脇の狭い隙間 (植え込み側など) に入り込んで抜けられなくなるため"""
+        """向かっている waypoint (停止点以外) の上に物体があれば, 一時停止して次の waypoint から再開する"""
         k = self.target_index
         if (not self.get_parameter('skip_blocked_waypoint').value or k is None or k >= len(self.route) - 1
                 or k == self.skipped_index or self.nav_status != 'running' or self.machine.state != 'idle'):
             return
-        # 動いている物体 (追従中の前のロボットなど) が通っただけでは飛ばさない: 動いている相手を追従中は見ない, 0.5 秒続けて塞がれていたら飛ばす
         now = self.get_clock().now().nanoseconds * 1e-9
-        # 信号の停止点の手前 20m 以内は飛ばさない (待機列のロボットを避けて追い越さないため)
+        # 動いている相手を追従中と, 停止点の手前 20m 以内は飛ばさない. 0.5 秒続けて塞がれていたら飛ばす
         moving_leader = (self.leader_last is not None and math.hypot(self.leader_last.vx, self.leader_last.vy)
                          >= self.get_parameter('follow_min_speed').value)
-        blocked = (not moving_leader and not near_stop_ahead(self.route, self.stops, k, 20.0)
+        # 飛ばした先でプロファイルが切り替わるなら飛ばさない
+        next_profile = self.profiles[k + 1] if k + 1 < len(self.profiles) else None
+        blocked = (not moving_leader and not next_profile and not near_stop_ahead(self.route, self.stops, k, 20.0)
                    and should_skip_waypoint(self.route[k], self.stops[k], (rx, ry), xy, 0.6, 7.0))
         # (waypoint, 塞がれ始めた時刻, 最後に塞がれていた時刻). 点群の一瞬の途切れ (1 秒以内) では数え直さない
         wp, first, last = self.blocked_wp
@@ -495,14 +491,7 @@ class YieldGuard(Node):
     def restart_once(self, index):
         self.restart_timer.cancel()
         self.destroy_timer(self.restart_timer)
-        self.restart_from(index)
-
-    def restart_from(self, index):
-        request = SetParameters.Request()
-        request.parameters = [ParameterMsg(name='start_index', value=ParameterValue(
-            type=ParameterType.PARAMETER_INTEGER, integer_value=int(index)))]
-        self.param_cli.call_async(request).add_done_callback(
-            lambda _: self.start_cli.call_async(Trigger.Request()))
+        self.set_start_index(index)
 
     def continue_route(self):
         """待機した位置より先の waypoint から走行を再開する (元の waypoint へは戻らない)"""
@@ -510,92 +499,79 @@ class YieldGuard(Node):
         if self.robot_xy is not None and self.route:
             index = next_waypoint_index(self.route, self.stops, self.robot_xy, index)
         self.get_logger().info(f'lane clear, continuing from waypoint {index}')
-        request = SetParameters.Request()
-        request.parameters = [ParameterMsg(name='start_index', value=ParameterValue(
-            type=ParameterType.PARAMETER_INTEGER, integer_value=int(index)))]
-        self.param_cli.call_async(request).add_done_callback(
-            lambda _: self.start_cli.call_async(Trigger.Request()))
+        self.set_start_index(index)
 
     def goto_refuge(self):
-        """待機点を決めて向かう. refuge_mode: search (その場で探索) / fixed (固定の退避点の前方最寄り) /
-        hybrid (固定の退避点をその場で確かめ, 使えなければ探索)"""
+        """待機点を決めて向かう: 固定の退避点をその場で確かめ, 駄目ならその場で探索, それも無ければレーン内で後退"""
         self.goal_done = False
         self.refuge = None
-        refuge, source = None, ''
-        mode = self.get_parameter('refuge_mode').value
-        if self.decision is not None and self.robot_xy is not None and self.decision_xy is not None:
-            lane = self.decision[0]
-            if mode == 'fixed':
-                refuge = choose_fixed_refuge(lane, self.robot_xy, self.decision_xy, self.refuge_points(),
-                                             self.get_parameter('refuge_fixed_ahead').value)
-                source = 'fixed'
-            cost = self.costmap_lookup()
-            if mode in ('search', 'hybrid') and cost is not None:
-                limit = self.get_parameter('refuge_max_cost').value
-                min_sep = self.get_parameter('refuge_min_sep').value
-                _, opponent_l = lane.project(*self.decision_xy)
-
-                def path_clear(a, b):
-                    n = max(2, int(math.hypot(b[0] - a[0], b[1] - a[1]) / 0.1))
-                    return all(cost(a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n) < 99
-                               for k in range(1, n + 1))
-
-                robot_l = lane.project(*self.robot_xy)[1]
-
-                def exit_clear(p):
-                    # 待機点で向きをそろえた後, レーンへ斜め前に戻れること (正面のコーン等で出られない点を除く)
-                    ps, _ = lane.project(*p)
-                    return path_clear(p, lane.point(ps + 2.0, robot_l))
-
-                why = {'cost': 0, 'path': 0, 'exit': 0, 'sep': 0}
-
-                def usable(p):
-                    # 外れた理由を数える (見つからなかったときのログ用)
-                    for key, ok in (('sep', lambda: abs(lane.project(*p)[1] - opponent_l) >= min_sep),
-                                    ('cost', lambda: cost(*p) <= limit),
-                                    ('path', lambda: path_clear(self.robot_xy, p)), ('exit', lambda: exit_clear(p))):
-                        if not ok():
-                            why[key] += 1
-                            return False
-                    return True
-                if mode == 'hybrid':
-                    refuge = choose_fixed_refuge(lane, self.robot_xy, self.decision_xy, self.refuge_points(),
-                                                 self.get_parameter('refuge_fixed_ahead').value, check=usable)
-                    source = 'fixed'
-                def usable_free(p):
-                    if cost(*p) > limit:
-                        why['cost'] += 1
-                        return False
-                    if not exit_clear(p):
-                        why['exit'] += 1
-                        return False
-                    return True
-                # 車道側へははみ出さない: ロボットから見て歩行者側 (keepout の帯がある側) だけを探す
-                side = self.pedestrian_side(lane)
-                if refuge is None and side is not None:
-                    refuge = find_refuge(
-                        lane, self.robot_xy, self.decision_xy, free=lambda p: usable_free(p),
-                        path_clear=path_clear, ahead=self.get_parameter('refuge_ahead').value,
-                        lateral=tuple(self.get_parameter('refuge_lateral').value),
-                        step=self.get_parameter('refuge_step').value, sides=(side,), min_sep=min_sep,
-                        behind=self.get_parameter('refuge_behind').value)
-                    source = 'search'
-                if refuge is None:
-                    # ポールの間などを抜けて相手が横を通れる所まで下がる (2-5m 後ろ, 歩行者側へ寄せた点を優先).
-                    # 出口の確認はしない (正面にコーンがあっても再開前の旋回で脇から出る)
-                    lats = (side * 1.0, side * 1.5, side * 0.5, 0.0) if side is not None else (0.0,)
-                    refuge = find_retreat(lane, self.robot_xy,
-                                          free=lambda p: cost(*p) <= limit and path_clear(self.robot_xy, p),
-                                          dists=tuple(np.arange(2.0, 5.01, 0.5)), laterals=lats)
-                    source = 'retreat'
+        refuge, source, why, side = None, '', None, None
+        cost = self.costmap_lookup()
+        if self.decision_lane is not None and self.robot_xy is not None and self.decision_xy is not None and cost is not None:
+            refuge, source, why, side = self.choose_refuge(self.decision_lane, cost)
         if refuge is None or not self.nav.wait_for_server(timeout_sec=1.0):
-            self.get_logger().info(f'no refuge available ({mode}), waiting in place '
-                                   f'(rejected: {locals().get("why")}, pedestrian side: {locals().get("side")})')
+            self.get_logger().info(f'no refuge available, waiting in place (rejected: {why}, pedestrian side: {side})')
             self.goal_done = True
             return
-        self.get_logger().info(f'moving to refuge ({refuge[0]:.1f}, {refuge[1]:.1f}) [{mode}:{source}]')
+        self.get_logger().info(f'moving to refuge ({refuge[0]:.1f}, {refuge[1]:.1f}) [{source}]')
         self.refuge, self.refuge_retries = refuge, 0
         self.send_refuge()
+
+    def choose_refuge(self, lane, cost):
+        """(待機点 (x, y, yaw) か None, 選び方, 外れた理由の件数, 歩行者側) を返す"""
+        limit = self.get_parameter('refuge_max_cost').value
+        min_sep = self.get_parameter('refuge_min_sep').value
+        _, opponent_l = lane.project(*self.decision_xy)
+        robot_l = lane.project(*self.robot_xy)[1]
+        why = {'cost': 0, 'path': 0, 'exit': 0, 'sep': 0}
+
+        def path_clear(a, b):
+            n = max(2, int(math.hypot(b[0] - a[0], b[1] - a[1]) / 0.1))
+            return all(cost(a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n) < 99 for k in range(1, n + 1))
+
+        def exit_clear(p):
+            # 待機点で向きをそろえた後, レーンへ斜め前に戻れること (正面のコーン等で出られない点を除く)
+            ps, _ = lane.project(*p)
+            return path_clear(p, lane.point(ps + 2.0, robot_l))
+
+        def usable(p):
+            # 外れた理由を数える (見つからなかったときのログ用)
+            for key, ok in (('sep', lambda: abs(lane.project(*p)[1] - opponent_l) >= min_sep),
+                            ('cost', lambda: cost(*p) <= limit),
+                            ('path', lambda: path_clear(self.robot_xy, p)), ('exit', lambda: exit_clear(p))):
+                if not ok():
+                    why[key] += 1
+                    return False
+            return True
+
+        def usable_free(p):
+            if cost(*p) > limit:
+                why['cost'] += 1
+                return False
+            if not exit_clear(p):
+                why['exit'] += 1
+                return False
+            return True
+
+        refuge = choose_fixed_refuge(lane, self.robot_xy, self.decision_xy, self.refuge_points(),
+                                     self.get_parameter('refuge_fixed_ahead').value, check=usable)
+        source = 'fixed'
+        # 車道側へははみ出さない: ロボットから見て歩行者側 (keepout の帯がある側) だけを探す
+        side = self.pedestrian_side(lane)
+        if refuge is None and side is not None:
+            refuge = find_refuge(
+                lane, self.robot_xy, self.decision_xy, free=usable_free, path_clear=path_clear,
+                ahead=self.get_parameter('refuge_ahead').value, lateral=tuple(self.get_parameter('refuge_lateral').value),
+                step=self.get_parameter('refuge_step').value, sides=(side,), min_sep=min_sep,
+                behind=self.get_parameter('refuge_behind').value)
+            source = 'search'
+        if refuge is None:
+            # ポールの間などを抜けて相手が横を通れる所まで 2-5m 後ろへ下がる (歩行者側を優先, 出口の確認はしない)
+            lats = (side * 1.0, side * 1.5, side * 0.5, 0.0) if side is not None else (0.0,)
+            refuge = find_retreat(lane, self.robot_xy, free=lambda p: cost(*p) <= limit and path_clear(self.robot_xy, p),
+                                  dists=tuple(np.arange(2.0, 5.01, 0.5)), laterals=lats)
+            source = 'retreat'
+        return refuge, source, why, side
 
     def refuge_points(self):
         """固定の退避点 [(x, y)] (refuge_points_file. 読み込みはパスが変わったときだけ)"""

@@ -51,8 +51,7 @@ class Lane:
 
 
 def route_lane(route, x, y, ahead, hint=None, before=3, after=10):
-    """ロボット位置 (x, y) の直前の route 点から ahead[m] 先までを Lane にする.
-    hint (向かっている waypoint 番号) があればその前後だけから探す (往路と復路が重なる区間の取り違え防止)"""
+    """ロボット位置 (x, y) の直前の route 点から ahead[m] 先までを Lane にする (hint の waypoint 前後だけから探す)"""
     pts = np.array(route, dtype=float)
     if hint is not None and 0 <= hint < len(pts):
         pts = pts[max(0, hint - before):min(len(pts), hint + after)]
@@ -101,8 +100,7 @@ class Track:
 
 
 class Tracker:
-    """最近傍で対応付け, 速度は window 秒の位置履歴への直線当てはめで求める.
-    履歴が min_span 秒未満, 残差が max_residual を超える (重心が飛ぶ), または max_speed を超える track は速度不明とする"""
+    """最近傍で対応付け, 速度は window 秒の位置履歴への直線当てはめで求める (短い履歴, 大きな残差, 速すぎる track は速度不明)"""
 
     def __init__(self, gate=0.8, max_age=1.0, window=1.0, min_span=0.6, max_residual=0.15, max_speed=2.5):
         self.gate, self.max_age = gate, max_age
@@ -163,9 +161,7 @@ def tracks_in_frame(tracks, tx, ty, yaw):
 
 def find_oncoming(lane, robot_s, tracks, half_width, ahead, min_speed, min_hits, min_ahead=0.0, now=None,
                   max_stale=0.3, min_travel=0.0):
-    """lane 上でロボットの前方 min_ahead〜ahead[m], 横 half_width 以内をこちらへ向かって進む最も近い track.
-    now を渡すと max_stale 秒以上観測されていない track は除く.
-    min_travel: 履歴の期間にこちらへ近づいた距離の下限 (静止物の見かけの重心移動は物体の大きさ程度で頭打ちになる)"""
+    """lane 上で前方 min_ahead〜ahead[m], 横 half_width 以内をこちらへ向かう最も近い track (min_travel: 履歴の間に近づいた距離の下限)"""
     best = None
     for tr in tracks:
         if tr.hits < min_hits or not tr.reliable or (now is not None and now - tr.t > max_stale):
@@ -185,8 +181,7 @@ def find_oncoming(lane, robot_s, tracks, half_width, ahead, min_speed, min_hits,
 
 def find_leader(lane, robot_s, tracks, half_width, ahead, min_speed, min_hits, now=None, max_stale=0.3,
                 min_travel=0.0):
-    """lane 上でロボットの前方 ahead[m], 横 half_width 以内を同じ向きに min_speed 以上で進む最も近い track (追従相手).
-    min_travel: 履歴の期間に進んだ距離の下限 (静止物の見かけの重心移動を除く)"""
+    """lane 上で前方 ahead[m], 横 half_width 以内を同じ向きに min_speed 以上で進む最も近い track (追従相手)"""
     best = None
     for tr in tracks:
         if tr.hits < min_hits or not tr.reliable or (now is not None and now - tr.t > max_stale):
@@ -207,9 +202,6 @@ def find_leader(lane, robot_s, tracks, half_width, ahead, min_speed, min_hits, n
 def follow_speed(gap, standoff, time_gap, max_speed, floor=0.001):
     """前方 gap[m] の相手に standoff を保って追従する速度上限. 速度上限 0 は「制限なし」扱いなので floor 以上を返す"""
     return min(max_speed, max(floor, (gap - standoff) / time_gap))
-
-
-
 
 
 class YieldStateMachine:
@@ -257,8 +249,7 @@ class YieldStateMachine:
 
 
 def next_waypoint_index(route, stops, robot_xy, current, margin=1.0, window=6):
-    """待機後に向かう waypoint. current 付近の区間だけを見て (往復で重なる区間の取り違え防止),
-    ロボットより margin[m] 以上先にある最初の waypoint を返す. 途中の停止点は飛ばさない"""
+    """待機後に向かう waypoint: current 付近だけを見て, ロボットより margin[m] 以上先の最初の waypoint (停止点は飛ばさない)"""
     lo, hi = max(0, current - 1), min(len(route) - 1, current + window)
     if hi <= lo:
         return current
@@ -277,7 +268,7 @@ def next_waypoint_index(route, stops, robot_xy, current, margin=1.0, window=6):
 
 
 class LeaderMonitor:
-    """追従相手が release_after 秒以上動かなければ手放す (静止物の取り違えで止まり続けないため). 手放した相手は再び追わない"""
+    """追従相手が release_after 秒以上動かなければ手放し, 手放した相手は再び追わない"""
 
     def __init__(self, release_after, moving_speed):
         self.release_after, self.moving_speed = release_after, moving_speed
@@ -296,16 +287,14 @@ class LeaderMonitor:
 
 
 def should_resend_refuge(status, elapsed, retries, canceled_by_us, max_retries=3, early=2.0):
-    """待機点ゴールが送ってすぐ (early 秒以内) に取り消し/中断されたら送り直す.
-    一時停止で取り消した waypoint 走行のキャンセルが, 後から送った待機点ゴールに当たることがあるため"""
+    """待機点ゴールが送ってすぐ (early 秒以内) に取り消し/中断されたら送り直す"""
     if canceled_by_us or retries >= max_retries or elapsed > early:
         return False
     return status in (5, 6)  # action_msgs/GoalStatus: CANCELED, ABORTED
 
 
 def obstacle_layer_action(following, layer_off, follow_enabled):
-    """追従中は global の障害物層を切り, 追従をやめたら戻す. layer_off: こちらが切った状態か.
-    follow_enabled が false (queue_guard 系プロファイル) なら層はプロファイルが管理するので戻さず忘れる ('forget')"""
+    """追従中は障害物層を切り, やめたら戻す ('disable'/'enable'). follow_enabled が false なら層はプロファイル管理なので 'forget'"""
     if following and not layer_off:
         return 'disable'
     if not following and layer_off:
@@ -314,7 +303,7 @@ def obstacle_layer_action(following, layer_off, follow_enabled):
 
 
 def smooth_limit(prev, target, dt, up, down):
-    """速度上限 prev を target へ, 上げは up[m/s^2], 下げは down[m/s^2] 以内の変化で近づける (prev=None はそのまま target)"""
+    """速度上限 prev を target へ, 上げは up, 下げは down [m/s^2] 以内の変化で近づける (prev=None は target)"""
     if prev is None:
         return target
     return min(prev + up * dt, target) if target > prev else max(prev - down * dt, target)
@@ -326,14 +315,9 @@ def predict_track(track, now, max_dt):
     return replace(track, x=track.x + track.vx * dt, y=track.y + track.vy * dt)
 
 
-def find_refuge(lane, robot_xy, opponent_xy, free, path_clear, ahead=3.0, lateral=(1.0, 2.0), step=0.5, prefer=None,
+def find_refuge(lane, robot_xy, opponent_xy, free, path_clear, ahead=3.0, lateral=(1.0, 2.0), step=0.5,
                 sides=(1.0, -1.0), min_sep=0.0, behind=0.0):
-    """待避を決めた時点でロボットの前方斜め前 (前方 step〜ahead[m], 左右に lateral[m]) を step 刻みで探す.
-    前方は相手との間隔の半分から 0.5m 手前まで (出会う地点より手前). free(点) と path_clear(ロボット, 点) を満たす点のうち,
-    prefer(点) が True の点 (歩行者側) を優先し, 次に相手の横位置から最も離れ, 次に向きの変化が小さい (より前方の) 点を返す.
-    前方に候補が無ければ真横, それも無ければ後方 (behind[m] まで) を探す. sides はレーンの左 (+1) / 右 (-1) のうち探す側.
-    相手の横位置から min_sep 未満の点は相手の進路から外れきれないので使わない.
-    戻り値は (x, y, yaw) か None"""
+    """前方斜め前 (出会う地点の手前), 無ければ真横, 後方 (behind[m] まで) の順に free と path_clear を満たす待機点 (x, y, yaw) を探す"""
     robot_s, robot_l = lane.project(*robot_xy)
     opponent_s, opponent_l = lane.project(*opponent_xy)
     limit = min(ahead, (opponent_s - robot_s) / 2.0 - 0.5)
@@ -347,10 +331,9 @@ def find_refuge(lane, robot_xy, opponent_xy, free, path_clear, ahead=3.0, latera
                     p = lane.point(s, l)
                     if abs(l - opponent_l) < min_sep or not free(p) or not path_clear(robot_xy, p):
                         continue
-                    preferred = prefer is None or bool(prefer(p))
                     # 前方は向きの変化が小さい点, 真横と後方は移動が短い点
                     tie = math.atan2(dl, ds) if ds > 0 else math.hypot(ds, dl)
-                    key = (not preferred, -round(abs(l - opponent_l), 2), round(tie, 3))
+                    key = (-round(abs(l - opponent_l), 2), round(tie, 3))
                     if best is None or key < best[0]:
                         best = (key, (p[0], p[1], lane.heading(s)))
         if best is not None:
@@ -372,8 +355,7 @@ def points_near(points, xy, radius):
 
 
 def choose_fixed_refuge(lane, robot_xy, opponent_xy, points, ahead, check=None, max_lateral=3.0):
-    """固定の退避点 points [(x, y)] のうち, 前方 ahead[m] 以内かつ出会う地点 (相手との間隔の半分 - 0.5m) より手前で,
-    check(点) を満たす最も近い点を (x, y, yaw) で返す. レーンから横に max_lateral[m] より離れた点は使わない"""
+    """固定の退避点のうち, 前方 ahead[m] 以内かつ出会う地点の手前で check を満たす最も近い点 (x, y, yaw). 横に max_lateral 超は除く"""
     if not points:
         return None
     robot_s, robot_l = lane.project(*robot_xy)
@@ -392,16 +374,14 @@ def choose_fixed_refuge(lane, robot_xy, opponent_xy, points, ahead, check=None, 
 
 
 def should_skip_waypoint(wp_xy, is_stop, robot_xy, points, radius, within):
-    """向かっている waypoint の radius[m] 以内に物体の点があり, ロボットが within[m] 以内まで来ていれば True.
-    停止点は飛ばさない (同じ場所で止まる必要がある)"""
+    """waypoint の radius[m] 以内に物体の点があり, ロボットが within[m] 以内まで来ていれば True (停止点は除く)"""
     if is_stop or math.hypot(wp_xy[0] - robot_xy[0], wp_xy[1] - robot_xy[1]) > within:
         return False
     return points_near(points, wp_xy, radius)
 
 
 def find_retreat(lane, robot_xy, free, dists=(1.5, 2.0, 2.5, 3.0), laterals=(0.0,)):
-    """待避点が無いときの最後の手段: レーンの中央を dists[m] 後ろへ下がる点のうち free を満たす最も近い点 (x, y, yaw).
-    yaw はレーンの向き (向きを変えずに後退で下がる). ポールの間などで対向と向き合って動けなくなるのを防ぐ"""
+    """最後の手段: レーンを dists[m] 後ろへ下がる点のうち free を満たす最も近い点 (x, y, yaw. 向きはレーンのまま)"""
     s, _ = lane.project(*robot_xy)
     for d in dists:
         for lat in laterals:

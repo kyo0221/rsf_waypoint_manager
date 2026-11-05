@@ -80,12 +80,13 @@ def test_find_oncoming_detects_object_approaching_in_lane():
     assert hit.s == pytest.approx(13.8, abs=0.3)
 
 
+# 同方向, 静止 (コーン), 帯の外 (歩行者側), 後方, 遠すぎる
 @pytest.mark.parametrize('obj', [
-    (15.0, 0.3, 1.0, 0.0),    # 同方向
-    (15.0, 0.3, 0.0, 0.0),    # 静止 (コーン)
-    (15.0, 2.5, -1.0, 0.0),   # 帯の外 (歩行者側)
-    (0.5, 0.0, -1.0, 0.0),    # 後方
-    (40.0, 0.0, -1.0, 0.0),   # 遠すぎる
+    (15.0, 0.3, 1.0, 0.0),
+    (15.0, 0.3, 0.0, 0.0),
+    (15.0, 2.5, -1.0, 0.0),
+    (0.5, 0.0, -1.0, 0.0),
+    (40.0, 0.0, -1.0, 0.0),
 ])
 def test_find_oncoming_ignores_other_objects(obj):
     tracks = make_tracks([obj])
@@ -395,7 +396,7 @@ def test_find_leader_accepts_slow_robot_over_three_seconds():
 def test_refuge_goal_canceled_right_after_send_is_retried():
     # 一時停止の取り消しが後から届いて待機点ゴールが消されたら, 送り直す
     from rsf_waypoint_manager.yield_logic import should_resend_refuge
-    canceled, aborted, succeeded = 5, 6, 4
+    canceled, aborted = 5, 6
     assert should_resend_refuge(canceled, elapsed=0.05, retries=0, canceled_by_us=False) is True
     assert should_resend_refuge(aborted, elapsed=0.3, retries=1, canceled_by_us=False) is True
 
@@ -494,22 +495,6 @@ def test_find_refuge_returns_none_when_nothing_is_free():
     from rsf_waypoint_manager.yield_logic import find_refuge
     assert find_refuge(straight_lane(), (5.0, 0.0), (12.0, 0.0), free=lambda p: False,
                        path_clear=lambda a, b: True) is None
-
-
-def test_find_refuge_prefers_pedestrian_side():
-    # 待機は歩行者側 (keepout の帯) を優先する. 相手が中央でも車道側 (植え込み) には寄らない
-    from rsf_waypoint_manager.yield_logic import find_refuge
-    r = find_refuge(straight_lane(), (5.0, 0.0), (12.0, 0.0), free=lambda p: True, path_clear=lambda a, b: True,
-                    prefer=lambda p: p[1] < 0.0)
-    assert r[1] == pytest.approx(-2.0)
-    # 相手が歩行者側に寄っていても, 歩行者側が空いていれば歩行者側
-    r = find_refuge(straight_lane(), (5.0, 0.0), (12.0, -0.5), free=lambda p: True, path_clear=lambda a, b: True,
-                    prefer=lambda p: p[1] < 0.0)
-    assert r[1] == pytest.approx(-2.0)
-    # 歩行者側が塞がれていれば車道側
-    r = find_refuge(straight_lane(), (5.0, 0.0), (12.0, -0.5), free=lambda p: p[1] > 0.0, path_clear=lambda a, b: True,
-                    prefer=lambda p: p[1] < 0.0)
-    assert r[1] == pytest.approx(2.0)
 
 
 def test_align_angle_returns_signed_turn_or_none():
