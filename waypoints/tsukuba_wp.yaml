@@ -50,12 +50,12 @@ waypoints:
   yaw: 2.583
   radius: 1.3
   stop: false
+  profile: following  # WP9-18: 両側が芝生の細い通路 (WP10-) とその手前. 通路の手前で追い越しを始めないよう WP9 から. 追い越さず追従し, 塞がれたら待つ
 - x: -25.453
   y: 26.047
   yaw: 2.95
   radius: 1.3
   stop: false
-  profile: following  # WP10-18: 両側が芝生の細い通路. 追い越さず追従し, 塞がれたら待つ
 - x: -32.763
   y: 26.62
   yaw: 3.045
@@ -97,7 +97,7 @@ waypoints:
   yaw: 2.937
   radius: 1.3
   stop: false
-  profile: default
+  profile: following  # WP16-18 は固定物に挟まれた狭い隙間. ここで障害物層を戻すと, 隙間にいる前走で塞がれたと見て来た道を戻る大回りの経路を引く. 開けた WP19 まで追従
 - x: -69.083
   y: 38.526
   yaw: 1.748
