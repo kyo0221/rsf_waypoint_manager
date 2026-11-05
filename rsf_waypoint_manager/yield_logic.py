@@ -389,3 +389,23 @@ def choose_fixed_refuge(lane, robot_xy, opponent_xy, points, ahead, check=None, 
         if check is None or check(p):
             return (p[0], p[1], lane.heading(float(s[i])))
     return None
+
+
+def should_skip_waypoint(wp_xy, is_stop, robot_xy, points, radius, within):
+    """向かっている waypoint の radius[m] 以内に物体の点があり, ロボットが within[m] 以内まで来ていれば True.
+    停止点は飛ばさない (同じ場所で止まる必要がある)"""
+    if is_stop or math.hypot(wp_xy[0] - robot_xy[0], wp_xy[1] - robot_xy[1]) > within:
+        return False
+    return points_near(points, wp_xy, radius)
+
+
+def find_retreat(lane, robot_xy, free, dists=(1.5, 2.0, 2.5, 3.0), laterals=(0.0,)):
+    """待避点が無いときの最後の手段: レーンの中央を dists[m] 後ろへ下がる点のうち free を満たす最も近い点 (x, y, yaw).
+    yaw はレーンの向き (向きを変えずに後退で下がる). ポールの間などで対向と向き合って動けなくなるのを防ぐ"""
+    s, _ = lane.project(*robot_xy)
+    for d in dists:
+        for lat in laterals:
+            p = lane.point(s - d, lat)
+            if free(p):
+                return (p[0], p[1], lane.heading(s - d))
+    return None

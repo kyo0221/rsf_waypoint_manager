@@ -593,3 +593,35 @@ def test_choose_fixed_refuge_ignores_points_of_other_lanes():
     from rsf_waypoint_manager.yield_logic import choose_fixed_refuge
     r = choose_fixed_refuge(straight_lane(), (5.0, 0.0), (20.0, 0.0), [(6.0, 8.0), (7.5, -1.2)], ahead=5.0)
     assert r[:2] == (7.5, -1.2)
+
+
+def test_skip_blocked_waypoint_only_when_near_and_not_stop():
+    # 向かっている waypoint の上に物体があり, ロボットが近づいていて, 停止点でなければ次へ飛ばす
+    from rsf_waypoint_manager.yield_logic import should_skip_waypoint
+    wp = (10.0, 0.0)
+    box = np.array([[10.1, 0.1], [10.2, -0.1]])
+    assert should_skip_waypoint(wp, False, (5.0, 0.0), box, radius=0.6, within=7.0) is True
+    assert should_skip_waypoint(wp, True, (5.0, 0.0), box, radius=0.6, within=7.0) is False
+    assert should_skip_waypoint(wp, False, (1.0, 0.0), box, radius=0.6, within=7.0) is False
+    assert should_skip_waypoint(wp, False, (5.0, 0.0), np.array([[11.0, 1.0]]), radius=0.6, within=7.0) is False
+
+
+def test_find_retreat_returns_nearest_free_lane_point_behind():
+    # 待避点が無いとき, レーンの中央を後ろへ下がる点 (近い順). 向きはレーンの向きのまま (後退で下がる)
+    from rsf_waypoint_manager.yield_logic import find_retreat
+    r = find_retreat(straight_lane(), (10.0, 0.0), free=lambda p: True)
+    assert r[0] == pytest.approx(8.5) and r[1] == pytest.approx(0.0) and r[2] == pytest.approx(0.0)
+    r = find_retreat(straight_lane(), (10.0, 0.0), free=lambda p: p[0] < 8.1)
+    assert r[0] == pytest.approx(8.0)
+    assert find_retreat(straight_lane(), (10.0, 0.0), free=lambda p: False) is None
+
+
+def test_find_retreat_tries_lateral_offsets_at_each_distance():
+    # 下がった先で歩行者側 (右 = -1) へ寄せた点を先に試す. 近い距離を優先
+    from rsf_waypoint_manager.yield_logic import find_retreat
+    r = find_retreat(straight_lane(), (10.0, 0.0), free=lambda p: p[0] < 7.6,
+                     dists=(2.0, 2.5, 3.0), laterals=(-1.0, 0.0))
+    assert r[0] == pytest.approx(7.5) and r[1] == pytest.approx(-1.0)
+    r = find_retreat(straight_lane(), (10.0, 0.0), free=lambda p: p[1] > -0.5,
+                     dists=(2.0,), laterals=(-1.0, 0.0))
+    assert r[0] == pytest.approx(8.0) and r[1] == pytest.approx(0.0)
