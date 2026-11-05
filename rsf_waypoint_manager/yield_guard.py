@@ -8,7 +8,7 @@ from geometry_msgs.msg import PoseStamped
 from builtin_interfaces.msg import Duration
 from nav2_msgs.action import NavigateToPose, Spin
 from rcl_interfaces.msg import Parameter as ParameterMsg, ParameterType, ParameterValue
-from rcl_interfaces.srv import SetParameters
+from rcl_interfaces.srv import GetParameters, SetParameters
 from nav_msgs.msg import OccupancyGrid
 from rclpy.action import ActionClient
 from rclpy.node import Node
@@ -22,7 +22,7 @@ from tf2_ros import Buffer, TransformListener
 
 from rsf_waypoint_manager.yield_logic import (
     align_angle, choose_fixed_refuge, cluster_points, find_leader, find_retreat, find_oncoming, find_refuge, follow_speed,
-    LeaderMonitor, next_waypoint_index, obstacle_layer_action, points_near, predict_track, route_lane,
+    LeaderMonitor, near_stop_ahead, next_waypoint_index, stop_ahead_within, obstacle_layer_action, points_near, predict_track, route_lane,
     should_resend_refuge, should_skip_waypoint, smooth_limit, Tracker, tracks_in_frame, YieldStateMachine)
 
 
@@ -66,6 +66,8 @@ class YieldGuard(Node):
         self.declare_parameter('refuge_step', 0.5)
         self.declare_parameter('refuge_min_sep', 1.0)  # 相手の横位置からこれ未満の点は相手の進路から外れきれない
         self.declare_parameter('skip_blocked_waypoint', True)
+        # 信号の停止点の手前 queue_zone[m] は待機列を追い越さない: global の障害物層を切り queue_guard で後ろに止まる (0 で無効)
+        self.declare_parameter('queue_zone', 12.0)
         self.declare_parameter('refuge_behind', 3.0)  # 前方と真横に無いときだけ後方を探す範囲
         # search (その場で探索) / fixed (固定の退避点) / hybrid (固定の退避点をその場で確かめ, 駄目なら探索).
         # 対向 47 シーンの比較で hybrid が到達 47/47, 停止時間が最短 (固定のみは停止が長い回, 探索のみは失敗 1 回)
@@ -123,12 +125,16 @@ class YieldGuard(Node):
         self.start_cli = self.create_client(Trigger, '/waypoint_navigator/start')
         self.param_cli = self.create_client(SetParameters, '/waypoint_navigator/set_parameters')
         self.global_param_cli = self.create_client(SetParameters, '/global_costmap/global_costmap/set_parameters')
+        self.global_get_cli = self.create_client(GetParameters, '/global_costmap/global_costmap/get_parameters')
+        self.queue_set_cli = self.create_client(SetParameters, '/queue_guard/set_parameters')
+        self.queue_get_cli = self.create_client(GetParameters, '/queue_guard/get_parameters')
+        self.queue_stop, self.queue_saved = None, None
         self.layer_off = False
         self.decision_xy = None
         self.limit_value, self.limit_time = None, 0.0
         self.target_index = None
         self.skipped_index, self.skip_to = None, None
-        self.blocked_wp = (None, 0.0)
+        self.blocked_wp = (None, 0.0, 0.0)
         self.obstacle_xy = np.zeros((0, 2))
         self.last_following = -math.inf
         self.nav = ActionClient(self, NavigateToPose, 'navigate_to_pose')
@@ -140,12 +146,16 @@ class YieldGuard(Node):
     def on_status(self, msg):
         words = msg.data.split()
         self.nav_status = words[0] if words else ''
+        if self.nav_status not in ('running', 'paused'):
+            # 走行が終わった / 止められた: 次の走行では同じ waypoint をまた飛ばせるようにする
+            self.skipped_index = None
         if len(words) > 1 and words[1].isdigit():
             self.target_index = int(words[1])
             # 飛ばした waypoint より手前から走り直したら (やり直し等) 同じ waypoint をまた飛ばせるようにする
             if self.skipped_index is not None and not (
                     self.skipped_index <= self.target_index <= self.skipped_index + 1):
                 self.skipped_index = None
+            self.update_queue_zone()
         if self.nav_status == 'paused' and len(words) > 1:
             self.paused_index = int(words[1])
             if self.skip_to is not None:
@@ -301,6 +311,75 @@ class YieldGuard(Node):
             self.limit_value = None
         self.update_obstacle_layer()
 
+    def update_queue_zone(self):
+        """信号の停止点の手前 queue_zone[m] に入ったら, global の障害物層を切って queue_guard を有効にする (待機列を回り込んで
+        追い越さず, 最後尾の後ろで止まる). 停止点を過ぎたら入る前の値に戻す. 区間内で waypoint が変わるたびに設定し直す
+        (プロファイルの切り替えで上書きされても戻すため)"""
+        within = self.get_parameter('queue_zone').value
+        k = self.target_index
+        if within <= 0.0 or k is None or not self.route:
+            return
+        stop = stop_ahead_within(self.route, self.stops, k, within)
+        if self.queue_stop is not None and stop != self.queue_stop:
+            # 停止点を過ぎた (または走り直し等で区間の外へ出た)
+            self.get_logger().info(f'leaving the queue zone of stop {self.queue_stop}')
+            self.queue_stop = None
+            if self.queue_saved not in (None, 'untouched'):
+                layer, queue = self.queue_saved
+                self.set_bool(self.global_param_cli, 'obstacle_layer.enabled', layer)
+                self.set_bool(self.queue_set_cli, 'enabled', queue)
+                self.queue_saved = None
+        if stop is None:
+            return
+        entering = self.queue_stop is None
+        self.queue_stop = stop
+        if entering:
+            self.get_logger().info(f'entering the queue zone before stop {stop}: no overtaking')
+            self.queue_saved = None
+            self.save_queue_params()  # 元の値を取得してから切り替える
+        elif self.queue_saved not in (None, 'untouched'):
+            self.apply_queue_params()
+
+    def apply_queue_params(self):
+        if self.queue_stop is None:
+            return
+        self.set_bool(self.global_param_cli, 'obstacle_layer.enabled', False)
+        self.set_bool(self.queue_set_cli, 'enabled', True)
+
+    def save_queue_params(self):
+        """待機列の区間に入る前の値 (global の障害物層, queue_guard) を覚えておく"""
+        if not (self.global_get_cli.service_is_ready() and self.queue_get_cli.service_is_ready()):
+            self.queue_saved = (True, False)
+            self.apply_queue_params()
+            return
+        f1 = self.global_get_cli.call_async(GetParameters.Request(names=['obstacle_layer.enabled']))
+        f2 = self.queue_get_cli.call_async(GetParameters.Request(names=['enabled']))
+
+        def done(_):
+            if f1.done() and f2.done() and self.queue_saved is None:
+                try:
+                    self.queue_saved = (f1.result().values[0].bool_value, f2.result().values[0].bool_value)
+                except Exception:
+                    self.queue_saved = (True, False)
+                # 追従で層を切っている最中なら, 区間を出たときは層を戻す (追従の判定がまた切る)
+                if self.layer_off:
+                    self.queue_saved = (True, self.queue_saved[1])
+                    self.layer_off = False
+                if self.queue_saved == (False, True):
+                    # もともと追い越さない設定 (確認走行区間の待機列のプロファイル等): 何も変えず, 出るときも戻さない.
+                    # 停止点の先のプロファイルの切り替えを上書きしないため
+                    self.queue_saved = 'untouched'
+                    return
+                self.apply_queue_params()
+        f1.add_done_callback(done)
+        f2.add_done_callback(done)
+
+    def set_bool(self, client, name, value):
+        request = SetParameters.Request()
+        request.parameters = [ParameterMsg(name=name, value=ParameterValue(
+            type=ParameterType.PARAMETER_BOOL, bool_value=bool(value)))]
+        client.call_async(request)
+
     def update_obstacle_layer(self):
         """動いている前走ロボットを global の障害物層に載せると追い越す経路を引くので, 追従中は層を切る"""
         now = self.get_clock().now().nanoseconds * 1e-9
@@ -308,6 +387,8 @@ class YieldGuard(Node):
             self.last_following = now
         # 追跡が一瞬切れただけで層を戻すと, その間に前走を避ける経路が引かれて左右に振れるので 6 秒待つ
         following = now - self.last_following < 6.0
+        if self.queue_stop is not None:
+            return  # 待機列の区間は層を切ったまま (queue_zone が管理する)
         if not self.get_parameter('follow_layer_off').value and not self.layer_off:
             return
         action = obstacle_layer_action(following and self.get_parameter('follow_layer_off').value, self.layer_off,
@@ -391,15 +472,22 @@ class YieldGuard(Node):
         if (not self.get_parameter('skip_blocked_waypoint').value or k is None or k >= len(self.route) - 1
                 or k == self.skipped_index or self.nav_status != 'running' or self.machine.state != 'idle'):
             return
-        # 動いている物体 (追従中の前のロボットなど) が通っただけでは飛ばさない: 追従中は見ない, 3 秒続けて塞がれていたら飛ばす
+        # 動いている物体 (追従中の前のロボットなど) が通っただけでは飛ばさない: 動いている相手を追従中は見ない, 0.5 秒続けて塞がれていたら飛ばす
         now = self.get_clock().now().nanoseconds * 1e-9
-        blocked = (self.leader_last is None
+        # 信号の停止点の手前 20m 以内は飛ばさない (待機列のロボットを避けて追い越さないため)
+        moving_leader = (self.leader_last is not None and math.hypot(self.leader_last.vx, self.leader_last.vy)
+                         >= self.get_parameter('follow_min_speed').value)
+        blocked = (not moving_leader and not near_stop_ahead(self.route, self.stops, k, 20.0)
                    and should_skip_waypoint(self.route[k], self.stops[k], (rx, ry), xy, 0.6, 7.0))
-        if not blocked or self.blocked_wp[0] != k:
-            self.blocked_wp = (k, now) if blocked else (None, now)
-            return
-        if now - self.blocked_wp[1] >= 3.0:
-            self.blocked_wp = (None, now)
+        # (waypoint, 塞がれ始めた時刻, 最後に塞がれていた時刻). 点群の一瞬の途切れ (1 秒以内) では数え直さない
+        wp, first, last = self.blocked_wp
+        if wp != k or now - last > 1.0:
+            wp, first = (k, now) if blocked else (None, now)
+        if blocked:
+            last = now
+        self.blocked_wp = (wp, first, last)
+        if blocked and wp == k and now - first >= 0.5:
+            self.blocked_wp = (None, now, now)
             self.skipped_index, self.skip_to = k, k + 1
             self.get_logger().info(f'waypoint {k} is occupied by an object, skipping to waypoint {k + 1}')
             self.pause_cli.call_async(Trigger.Request())

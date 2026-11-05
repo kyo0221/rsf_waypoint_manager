@@ -409,3 +409,21 @@ def find_retreat(lane, robot_xy, free, dists=(1.5, 2.0, 2.5, 3.0), laterals=(0.0
             if free(p):
                 return (p[0], p[1], lane.heading(s - d))
     return None
+
+
+def stop_ahead_within(route, stops, k, within):
+    """waypoint k から経路に沿って within[m] 以内 (k を含む) にある最初の停止点の番号. 無ければ None"""
+    dist = 0.0
+    for j in range(k, len(route)):
+        if j > k:
+            dist += math.hypot(route[j][0] - route[j - 1][0], route[j][1] - route[j - 1][1])
+        if dist > within:
+            return None
+        if stops[j]:
+            return j
+    return None
+
+
+def near_stop_ahead(route, stops, k, within):
+    """waypoint k から経路に沿って within[m] 以内 (k を含む) に停止点があれば True"""
+    return stop_ahead_within(route, stops, k, within) is not None

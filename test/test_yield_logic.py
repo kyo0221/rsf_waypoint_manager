@@ -625,3 +625,25 @@ def test_find_retreat_tries_lateral_offsets_at_each_distance():
     r = find_retreat(straight_lane(), (10.0, 0.0), free=lambda p: p[1] > -0.5,
                      dists=(2.0,), laterals=(-1.0, 0.0))
     assert r[0] == pytest.approx(8.0) and r[1] == pytest.approx(0.0)
+
+
+def test_near_stop_ahead_detects_stop_within_route_distance():
+    # 信号の停止点の手前 (経路に沿って within[m] 以内) の waypoint は飛ばさない (待機列を追い越さない)
+    from rsf_waypoint_manager.yield_logic import near_stop_ahead
+    route = [(0.0, 0.0), (10.0, 0.0), (20.0, 0.0), (30.0, 0.0), (40.0, 0.0)]
+    stops = [False, False, False, True, False]
+    assert near_stop_ahead(route, stops, 2, 20.0) is True
+    assert near_stop_ahead(route, stops, 1, 20.0) is True
+    assert near_stop_ahead(route, stops, 0, 20.0) is False
+    assert near_stop_ahead(route, stops, 4, 20.0) is False
+
+
+def test_stop_ahead_within_returns_stop_index():
+    # 経路に沿って within[m] 以内の先の停止点の番号 (待機列の区間). 無ければ None
+    from rsf_waypoint_manager.yield_logic import stop_ahead_within
+    route = [(0.0, 0.0), (10.0, 0.0), (20.0, 0.0), (25.0, 0.0), (40.0, 0.0)]
+    stops = [False, False, False, True, False]
+    assert stop_ahead_within(route, stops, 2, 12.0) == 3
+    assert stop_ahead_within(route, stops, 3, 12.0) == 3
+    assert stop_ahead_within(route, stops, 1, 12.0) is None
+    assert stop_ahead_within(route, stops, 4, 12.0) is None
