@@ -632,3 +632,18 @@ def test_stop_ahead_within_returns_stop_index():
     assert stop_ahead_within(route, stops, 3, 12.0) == 3
     assert stop_ahead_within(route, stops, 1, 12.0) is None
     assert stop_ahead_within(route, stops, 4, 12.0) is None
+
+
+def test_stalled_needs_full_window_without_motion():
+    from rsf_waypoint_manager.yield_logic import stalled
+    h = [(0.0, (0.0, 0.0)), (4.0, (0.05, 0.0)), (8.5, (0.08, 0.0))]
+    assert stalled(h, 8.5, 8.0, 0.1)
+    assert not stalled(h, 8.5, 8.0, 0.05)
+    assert not stalled(h[1:], 8.5, 8.0, 0.1)
+
+
+def test_blocked_ahead_checks_points_in_front_of_robot():
+    from rsf_waypoint_manager.yield_logic import blocked_ahead
+    assert blocked_ahead([(0.4, 0.1)], (0.0, 0.0, 0.0), 0.5, 0.45)
+    assert not blocked_ahead([(-0.4, 0.0), (0.4, 0.6), (0.8, 0.0)], (0.0, 0.0, 0.0), 0.5, 0.45)
+    assert blocked_ahead([(0.0, 0.4)], (0.0, 0.0, math.pi / 2), 0.5, 0.45)

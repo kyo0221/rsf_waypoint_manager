@@ -6,7 +6,7 @@ import rclpy
 import yaml
 from geometry_msgs.msg import PoseStamped
 from builtin_interfaces.msg import Duration
-from nav2_msgs.action import NavigateToPose, Spin
+from nav2_msgs.action import BackUp, NavigateToPose, Spin
 from rcl_interfaces.msg import Parameter as ParameterMsg, ParameterType, ParameterValue
 from rcl_interfaces.srv import SetParameters
 from nav_msgs.msg import OccupancyGrid
@@ -21,9 +21,9 @@ from std_srvs.srv import Trigger
 from tf2_ros import Buffer, TransformListener
 
 from rsf_waypoint_manager.yield_logic import (
-    align_angle, choose_fixed_refuge, cluster_points, find_leader, find_retreat, find_oncoming, find_refuge, follow_speed,
+    align_angle, blocked_ahead, choose_fixed_refuge, cluster_points, find_leader, find_retreat, find_oncoming, find_refuge, follow_speed,
     LeaderMonitor, near_stop_ahead, next_waypoint_index, obstacle_layer_action, points_near, predict_track, route_lane,
-    should_resend_refuge, should_skip_waypoint, smooth_limit, Tracker, tracks_in_frame, YieldStateMachine)
+    should_resend_refuge, should_skip_waypoint, smooth_limit, stalled, Tracker, tracks_in_frame, YieldStateMachine)
 
 
 def yaw_of(q):
@@ -65,6 +65,7 @@ class YieldGuard(Node):
         self.declare_parameter('refuge_step', 0.5)
         self.declare_parameter('refuge_min_sep', 1.0)  # 相手の横位置からこれ未満の点は相手の進路から外れきれない
         self.declare_parameter('skip_blocked_waypoint', True)
+        self.declare_parameter('unstick_enabled', True)  # 正面を塞がれて 8 秒動けなければ 0.4m 下がって走り直す
         # 固定の退避点 (空なら waypoints_file の <name>_wp.yaml に対する <name>_refuge_points.yaml)
         self.declare_parameter('refuge_points_file', '')
         self.declare_parameter('refuge_behind', 3.0)  # 前方と真横に無いときだけ後方を探す範囲
@@ -130,6 +131,9 @@ class YieldGuard(Node):
         self.last_following = -math.inf
         self.nav = ActionClient(self, NavigateToPose, 'navigate_to_pose')
         self.spin = ActionClient(self, Spin, 'spin')
+        self.backup = ActionClient(self, BackUp, 'backup')
+        self.motion, self.unstick_index, self.held = [], None, (0.0, False)
+        self.create_subscription(Float32, '/waypoint_navigator/speed_override', self.on_override, 10)
         self.state_pub = self.create_publisher(String, '~/state', transient)
         self.speed_pub = self.create_publisher(Float32, '/waypoint_navigator/speed_override', 10)
         self.create_timer(0.1, self.tick)
@@ -148,6 +152,8 @@ class YieldGuard(Node):
                 self.skipped_index = None
         if self.nav_status == 'paused' and len(words) > 1:
             self.paused_index = int(words[1])
+            if self.unstick_index is not None and self.unstick_index >= 0:
+                self.back_up()
             if self.skip_to is not None:
                 # 一時停止の取り消し処理が終わる前に再開を送ると新しい追従の要求が失われるので 0.5 秒おく
                 index, self.skip_to = self.skip_to, None
@@ -220,6 +226,7 @@ class YieldGuard(Node):
                 self.target_last = tr
         self.update_leader(lane, robot_s, tracks, odom_tracks, map_odom, now)
         self.skip_blocked_waypoint(xy, rx, ry)
+        self.check_stall(xy, rx, ry, now)
         self.waiting_for = False
         if self.target_last is not None:
             last = tracks_in_frame([self.target_last], *map_odom)[0]
@@ -432,6 +439,44 @@ class YieldGuard(Node):
             self.skipped_index, self.skip_to = k, k + 1
             self.get_logger().info(f'waypoint {k} is occupied by an object, skipping to waypoint {k + 1}')
             self.pause_cli.call_async(Trigger.Request())
+
+    def on_override(self, msg):
+        # queue_guard が前の物体の後ろで意図して止めている (待機列) 間は立て直さない. 0 は上限なし
+        self.held = (self.get_clock().now().nanoseconds * 1e-9, 0.0 < msg.data < 0.5)
+
+    def check_stall(self, xy, rx, ry, now):
+        """正面 (0.9m 以内, 横 0.65m 以内) を塞がれて 8 秒ほとんど動けなければ, 一時停止して 0.4m 下がり, 同じ waypoint から走り直す"""
+        self.motion = [m for m in self.motion if m[0] >= now - 10.0] + [(now, (rx, ry))]
+        held = self.held[1] and now - self.held[0] < 1.0
+        if (not self.get_parameter('unstick_enabled').value or self.unstick_index is not None or held
+                or self.nav_status != 'running' or self.machine.state != 'idle' or self.target_index is None
+                or not stalled(self.motion, now, 8.0, 0.1)):
+            return
+        try:
+            pose = self.lookup('map', 'base_footprint')
+        except Exception:
+            return
+        if not blocked_ahead(xy, pose, 0.9, 0.65):
+            return
+        self.get_logger().info(f'stuck in front of an object, backing up and retrying waypoint {self.target_index}')
+        self.unstick_index, self.motion = self.target_index, []
+        self.pause_cli.call_async(Trigger.Request())
+
+    def back_up(self):
+        index, self.unstick_index = self.unstick_index, -1
+        goal = BackUp.Goal()
+        goal.target.x, goal.speed = 0.4, 0.1
+        goal.time_allowance = Duration(sec=8)
+
+        def finish(_=None):
+            self.unstick_index, self.motion = None, []
+            self.set_start_index(index)
+        if not self.backup.wait_for_server(timeout_sec=0.5):
+            self.after(0.5, finish)
+            return
+        self.backup.send_goal_async(goal).add_done_callback(
+            lambda f: f.result().get_result_async().add_done_callback(lambda _: self.after(0.5, finish))
+            if f.result().accepted else self.after(0.5, finish))
 
     def restart_once(self, index):
         self.restart_timer.cancel()

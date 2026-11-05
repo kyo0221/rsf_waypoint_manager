@@ -407,3 +407,23 @@ def stop_ahead_within(route, stops, k, within):
 def near_stop_ahead(route, stops, k, within):
     """waypoint k から経路に沿って within[m] 以内 (k を含む) に停止点があれば True"""
     return stop_ahead_within(route, stops, k, within) is not None
+
+
+def stalled(history, now, window, min_move):
+    """history [(t, (x, y))] で直近 window[s] 全体を通して移動が min_move[m] 未満なら True"""
+    recent = [h for h in history if h[0] >= now - window - 1.0]
+    if not recent or now - recent[0][0] < window:
+        return False
+    x0, y0 = recent[-1][1]
+    return max(math.hypot(x - x0, y - y0) for _, (x, y) in recent) < min_move
+
+
+def blocked_ahead(points, pose, ahead, half_width):
+    """map 座標の点のうち, ロボット (x, y, yaw) の正面 ahead[m] 以内・横 half_width[m] 以内にあるものがあれば True"""
+    x, y, yaw = pose
+    c, s = math.cos(yaw), math.sin(yaw)
+    for px, py in points:
+        fx, fy = c * (px - x) + s * (py - y), -s * (px - x) + c * (py - y)
+        if 0.0 < fx <= ahead and abs(fy) <= half_width:
+            return True
+    return False
