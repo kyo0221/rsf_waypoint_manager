@@ -674,3 +674,16 @@ def test_passing_oncoming_detects_close_approaching_track():
     assert not passing_oncoming(lane, 10.0, 0.0, [same_way], 4.0, 1.5, 0.2)
     wide = Track(id=4, x=12.0, y=2.0, vx=-0.5, vy=0.0, t=0.0, hits=5, reliable=True)
     assert not passing_oncoming(lane, 10.0, 0.0, [wide], 4.0, 1.5, 0.2)
+
+
+def test_cone_line_beside_waypoint_does_not_block_it():
+    """歩道のコーン列 (経路の横 0.7m, 半径 0.18m) が waypoint の真横にあっても塞いでいるとはみなさない"""
+    from rsf_waypoint_manager.yield_logic import SKIP_RADIUS, should_skip_waypoint
+    cone = [(10.0 + 0.18 * math.cos(a), 0.7 + 0.18 * math.sin(a)) for a in np.linspace(0, 2 * math.pi, 12)]
+    assert not should_skip_waypoint((10.0, 0.0), False, (5.0, 0.0), np.array(cone), SKIP_RADIUS, 7.0)
+
+
+def test_robot_parked_on_waypoint_still_blocks_it():
+    from rsf_waypoint_manager.yield_logic import SKIP_RADIUS, should_skip_waypoint
+    box = [(10.0 + x, y) for x in np.linspace(-0.4, 0.4, 9) for y in (-0.3, 0.3)]  # 0.8x0.6 の側面の点
+    assert should_skip_waypoint((10.0, 0.0), False, (5.0, 0.0), np.array(box), SKIP_RADIUS, 7.0)

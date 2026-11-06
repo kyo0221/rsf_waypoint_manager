@@ -375,6 +375,10 @@ def choose_fixed_refuge(lane, robot_xy, opponent_xy, points, ahead, check=None, 
     return None
 
 
+# waypoint の上の物体とみなす半径 [m]. 0.6 だと経路の横 0.7m のコーン列 (表面は 0.52m) を拾って止まる
+SKIP_RADIUS = 0.45
+
+
 def should_skip_waypoint(wp_xy, is_stop, robot_xy, points, radius, within):
     """waypoint の radius[m] 以内に物体の点があり, ロボットが within[m] 以内まで来ていれば True (停止点は除く)"""
     if is_stop or math.hypot(wp_xy[0] - robot_xy[0], wp_xy[1] - robot_xy[1]) > within:

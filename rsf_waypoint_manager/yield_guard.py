@@ -24,7 +24,7 @@ from tf2_ros import Buffer, TransformListener
 from rsf_waypoint_manager.yield_logic import (
     align_angle, backup_distance, blocked_ahead, choose_fixed_refuge, cluster_points, find_leader, find_retreat, find_oncoming, find_refuge, follow_speed,
     filter_points_outside_zones, in_zones, LeaderMonitor, load_zones, near_stop_ahead, next_waypoint_index, passing_oncoming, obstacle_layer_action, points_near, predict_track, route_lane,
-    oncoming_for_machine, segment_hits_zones, should_resend_refuge, should_skip_waypoint, smooth_limit, stalled, Tracker,
+    oncoming_for_machine, segment_hits_zones, should_resend_refuge, should_skip_waypoint, SKIP_RADIUS, smooth_limit, stalled, Tracker,
     tracks_in_frame, YieldStateMachine, zones_file_for)
 
 
@@ -459,7 +459,7 @@ class YieldGuard(Node):
         # 飛ばした先でプロファイルが切り替わるなら飛ばさない
         next_profile = self.profiles[k + 1] if k + 1 < len(self.profiles) else None
         blocked = (not moving_leader and not next_profile and not near_stop_ahead(self.route, self.stops, k, 20.0)
-                   and should_skip_waypoint(self.route[k], self.stops[k], (rx, ry), xy, 0.6, 7.0))
+                   and should_skip_waypoint(self.route[k], self.stops[k], (rx, ry), xy, SKIP_RADIUS, 7.0))
         # (waypoint, 塞がれ始めた時刻, 最後に塞がれていた時刻). 点群の一瞬の途切れ (1 秒以内) では数え直さない
         wp, first, last = self.blocked_wp
         if wp != k or now - last > 1.0:
