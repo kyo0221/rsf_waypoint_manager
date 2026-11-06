@@ -29,3 +29,10 @@ def test_pole_gates_on_wp112_to_115_use_poles_profile():
     for k in (113, 114, 115):
         assert profile_at(w, k) == 'road_edge_keep_poles'
     assert profile_at(w, 116) == 'road_edge_keep'
+
+
+def test_hotel_section_wp146_to_169_keeps_road_edge():
+    """ホテル周辺 (WP146-169) は走行領域が狭く, はみ出しが失格に直結するので road_edge_keep で走る"""
+    w = load()
+    for k in range(146, 170):
+        assert profile_at(w, k) == 'road_edge_keep'
