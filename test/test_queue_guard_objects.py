@@ -1,16 +1,11 @@
 import numpy as np
 from nav_msgs.msg import MapMetaData
 
-from rsf_waypoint_manager.queue_guard import queue_objects, tall_mask
+from rsf_waypoint_manager.queue_guard import queue_objects
 
 RES = 0.05
-
-
-def info(width, height, resolution=RES, ox=0.0, oy=0.0):
-    i = MapMetaData()
-    i.width, i.height, i.resolution = width, height, resolution
-    i.origin.position.x, i.origin.position.y = ox, oy
-    return i
+INFO = MapMetaData()
+INFO.width, INFO.height, INFO.resolution = 80, 80, RES
 
 
 def blob(grid, cx, cy, size):
@@ -20,49 +15,64 @@ def blob(grid, cx, cy, size):
     grid[j0:j0 + n, i0:i0 + n] = True
 
 
-def test_large_object_counts_without_tall_points():
+def column(cx, cy, z0, z1):
+    """(cx, cy) に z0 から z1 まで縦に並ぶ点 (ロボットの足元の高さが基準)"""
+    return np.array([[cx, cy, z] for z in np.arange(z0, z1 + 1e-6, 0.05)])
+
+
+def objects(lethal, points=None):
+    return queue_objects(lethal, RES, min_size=0.48, max_size=1.5, points=points, info=INFO, radius=0.3, tall_span=0.78)
+
+
+def test_large_object_counts_without_points():
     lethal = np.zeros((80, 80), dtype=bool)
     blob(lethal, 2.0, 2.0, 0.6)  # 待機列のロボット
-    objects = queue_objects(lethal, RES, min_size=0.48, max_size=1.5)
-    assert objects[40, 40]
+    assert objects(lethal)[40, 40]
 
 
-def test_small_object_without_tall_points_is_ignored():
+def test_cone_is_ignored():
     lethal = np.zeros((80, 80), dtype=bool)
-    blob(lethal, 2.0, 2.0, 0.4)  # コーン
-    objects = queue_objects(lethal, RES, min_size=0.48, max_size=1.5, tall=np.zeros_like(lethal))
-    assert not objects.any()
+    blob(lethal, 2.0, 2.0, 0.4)
+    assert not objects(lethal, column(2.0, 2.0, 0.05, 0.7)).any()
 
 
-def test_leg_blobs_under_tall_points_count_as_a_person():
+def test_cone_on_an_uphill_is_still_ignored():
+    """上り坂の先のコーンは, ロボットの足元から見て頂点が 0.85m を超えるが, 縦の幅は 0.7m のまま"""
+    lethal = np.zeros((80, 80), dtype=bool)
+    blob(lethal, 2.0, 2.0, 0.4)
+    assert not objects(lethal, column(2.0, 2.0, 0.25, 0.9)).any()
+
+
+def test_leg_blobs_under_a_torso_count_as_a_person():
     lethal = np.zeros((80, 80), dtype=bool)
     blob(lethal, 1.9, 2.0, 0.15)  # 左脚
     blob(lethal, 2.15, 2.0, 0.15)  # 右脚
-    tall = tall_mask(np.array([[2.02, 2.0]]), info(80, 80), radius=0.3)  # 胴体の点
-    objects = queue_objects(lethal, RES, min_size=0.48, max_size=1.5, tall=tall)
-    assert objects[40, 38] and objects[40, 43]
+    pts = np.vstack([column(1.9, 2.0, 0.1, 0.9), column(2.15, 2.0, 0.1, 0.9), column(2.02, 2.0, 0.9, 1.1)])
+    o = objects(lethal, pts)
+    assert o[40, 38] and o[40, 43]
 
 
-def test_tall_points_far_from_a_cone_do_not_keep_it():
+def test_person_on_an_uphill_still_counts():
+    """点群は足元から 1.1m までなので, 0.2m 上り坂の人は地面から 0.9m までしか見えない"""
+    lethal = np.zeros((80, 80), dtype=bool)
+    blob(lethal, 2.0, 2.0, 0.3)
+    assert objects(lethal, column(2.0, 2.0, 0.3, 1.1)).any()
+
+
+def test_points_far_from_a_cone_do_not_extend_it():
     lethal = np.zeros((80, 80), dtype=bool)
     blob(lethal, 2.0, 2.0, 0.4)
-    tall = tall_mask(np.array([[3.0, 2.0]]), info(80, 80), radius=0.3)
-    objects = queue_objects(lethal, RES, min_size=0.48, max_size=1.5, tall=tall)
-    assert not objects.any()
+    pts = np.vstack([column(2.0, 2.0, 0.05, 0.7), column(3.0, 2.0, 0.05, 1.1)])
+    assert not objects(lethal, pts).any()
 
 
 def test_object_larger_than_max_is_ignored_even_if_tall():
     lethal = np.zeros((80, 80), dtype=bool)
     blob(lethal, 2.0, 2.0, 2.0)  # 壁・植え込み
-    tall = tall_mask(np.array([[2.0, 2.0]]), info(80, 80), radius=0.3)
-    assert not queue_objects(lethal, RES, min_size=0.48, max_size=1.5, tall=tall).any()
+    assert not objects(lethal, column(2.0, 2.0, 0.0, 1.1)).any()
 
 
-def test_tall_mask_uses_grid_origin_and_drops_points_outside():
-    m = tall_mask(np.array([[10.25, 5.25], [0.0, 0.0], [99.0, 99.0]]), info(20, 20, ox=10.0, oy=5.0), radius=0.0)
-    assert m[5, 5]
-    assert m.sum() == 1
-
-
-def test_tall_mask_without_points_is_empty():
-    assert not tall_mask(np.zeros((0, 2)), info(10, 10), radius=0.3).any()
+def test_points_outside_the_grid_are_dropped():
+    lethal = np.zeros((80, 80), dtype=bool)
+    blob(lethal, 2.0, 2.0, 0.4)
+    assert not objects(lethal, column(99.0, 99.0, 0.0, 1.1)).any()

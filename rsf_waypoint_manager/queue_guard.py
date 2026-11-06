@@ -28,27 +28,49 @@ def static_mask(grid, resolution, margin):
     return dilate(grid >= 65, resolution, max(margin, resolution))
 
 
-def tall_mask(points, info, radius):
-    """格子の座標系の点 [[x, y], ...] (背の高い物の点) のあるセルを radius [m] 膨らませた bool マスク"""
-    mask = np.zeros((info.height, info.width), dtype=bool)
-    if len(points) == 0:
-        return mask
+def blob_spans(labels, count, points, info, radius):
+    """各塊 (label) の radius [m] 以内に落ちる点の高さの幅 (最も高い点 - 最も低い点). 点が無ければ 0.
+    ロボットの足元からの高さそのものでなく幅で見るので, 坂の上下にある物でも背の高さが分かる"""
+    spans = np.zeros(count + 1)
+    if points is None or len(points) == 0 or count == 0:
+        return spans
     i = np.floor((points[:, 0] - info.origin.position.x) / info.resolution).astype(int)
     j = np.floor((points[:, 1] - info.origin.position.y) / info.resolution).astype(int)
-    ok = (i >= 0) & (i < info.width) & (j >= 0) & (j < info.height)
-    mask[j[ok], i[ok]] = True
-    return dilate(mask, info.resolution, radius)
+    z = points[:, 2]
+    cells = math.ceil(radius / info.resolution)
+    y, x = np.ogrid[-cells:cells + 1, -cells:cells + 1]
+    disk = (x * x + y * y) <= cells * cells
+    # 塊ごとに外接矩形を radius 広げた窓の中だけで膨らませる (隣の塊と近くても点を両方に数える)
+    for k, sl in enumerate(ndimage.find_objects(labels), start=1):
+        if sl is None:
+            continue
+        j0, j1 = sl[0].start - cells, sl[0].stop + cells
+        i0, i1 = sl[1].start - cells, sl[1].stop + cells
+        sel = (j >= j0) & (j < j1) & (i >= i0) & (i < i1)
+        if not sel.any():
+            continue
+        win = np.zeros((j1 - j0, i1 - i0), dtype=bool)
+        cj0, ci0 = max(j0, 0), max(i0, 0)
+        win[cj0 - j0:min(j1, labels.shape[0]) - j0, ci0 - i0:min(i1, labels.shape[1]) - i0] = \
+            labels[cj0:min(j1, labels.shape[0]), ci0:min(i1, labels.shape[1])] == k
+        if cells > 0:
+            win = ndimage.binary_dilation(win, structure=disk)
+        zk = z[sel][win[j[sel] - j0, i[sel] - i0]]
+        if len(zk):
+            spans[k] = float(zk.max() - zk.min())
+    spans[0] = 0.0
+    return spans
 
 
-def queue_objects(lethal, resolution, min_size, max_size, tall=None):
+def queue_objects(lethal, resolution, min_size, max_size, points=None, info=None, radius=0.3, tall_span=0.0):
     """前に並ぶ物体として数えるセルの bool マスク.
     max_size [m] を超える塊 (壁・植え込み) は数えない. min_size [m] 未満の塊 (コーン等) は,
-    背の高い点 (tall) と重なるときだけ数える: 人は LiDAR で脚 2 本の小さな塊に分かれても, 胴体の点が上にある"""
+    上に乗る点群 (points: 格子の座標系の [x, y, z]) の高さの幅が tall_span 以上のときだけ数える:
+    人は LiDAR で脚 2 本の小さな塊に分かれても, 胴体の点が上にあって縦に長い (コーンは 0.7m)"""
     labels, count = ndimage.label(lethal, structure=np.ones((3, 3)))
     has_tall = np.zeros(count + 1, dtype=bool)
-    if tall is not None:
-        has_tall[np.unique(labels[tall & lethal])] = True
-        has_tall[0] = False
+    if tall_span > 0.0 and info is not None:
+        has_tall = blob_spans(labels, count, points, info, radius) >= tall_span
     keep = np.zeros(count + 1, dtype=bool)
     lower, limit = min_size / resolution, max_size / resolution
     for k, sl in enumerate(ndimage.find_objects(labels), start=1):
@@ -85,9 +107,9 @@ class QueueGuard(Node):
         self.declare_parameter('lethal', 100)
         self.declare_parameter('max_object_size', 1.5)
         self.declare_parameter('use_route', False)  # 経路 (/plan) でなく waypoint の線に沿って前の物体を探す (経路が列を回り込んでも止まる)
-        self.declare_parameter('min_object_size', 0.0)  # これより小さい塊 (コーン等) は, 背の高い点が上に無ければ前の物体として数えない
-        # 背の高い物 (人) の判定: 点群でこの高さ [m] (base_footprint 基準) 以上の点がある塊は小さくても数える. 0 で使わない
-        self.declare_parameter('tall_height', 0.0)
+        self.declare_parameter('min_object_size', 0.0)  # これより小さい塊 (コーン等) は, 縦に長く (tall_span) なければ前の物体として数えない
+        # 人の判定: 塊の点群の高さの幅 [m] がこれ以上なら小さくても数える (足元からの高さだと上り坂のコーンを拾う). 0 で無効
+        self.declare_parameter('tall_span', 0.0)
         self.declare_parameter('tall_radius', 0.3)  # 胴体の点と脚の塊を結びつける距離 [m]
         self.declare_parameter('tall_points_topic', '/ground_segmentation/obstacle_points')
         # 前走物体として数えない静的マスク. 芝生マスク (keepout) を local costmap に入れると,
@@ -138,25 +160,24 @@ class QueueGuard(Node):
         self.cloud = msg
         self.objects = None
 
-    def tall_cells(self):
-        """点群のうち tall_height 以上の点を local costmap の格子に落としたマスク. 使わない設定なら None"""
-        height = self.get_parameter('tall_height').value
-        if height <= 0.0 or self.cloud is None:
+    def cloud_points(self):
+        """点群 (地面を除いた障害物の点) を local costmap の座標系の [x, y, z] にしたもの. 使わない設定なら None"""
+        if self.get_parameter('tall_span').value <= 0.0 or self.cloud is None:
             return None
         points = point_cloud2.read_points_numpy(self.cloud, field_names=('x', 'y', 'z'), skip_nans=True)
-        points = points[points[:, 2] >= height]
         if len(points):
             ox, oy, oyaw = self.pose(self.local.header.frame_id, self.cloud.header.frame_id)
             c, s = math.cos(oyaw), math.sin(oyaw)
-            points = np.stack([ox + points[:, 0] * c - points[:, 1] * s, oy + points[:, 0] * s + points[:, 1] * c], axis=1)
-        return tall_mask(points[:, :2], self.local.info, self.get_parameter('tall_radius').value)
+            points = np.stack([ox + points[:, 0] * c - points[:, 1] * s, oy + points[:, 0] * s + points[:, 1] * c, points[:, 2]], axis=1)
+        return points
 
     def object_mask(self):
         if self.objects is None:
             self.objects = queue_objects(
                 self.grid >= self.get_parameter('lethal').value, self.local.info.resolution,
                 self.get_parameter('min_object_size').value, self.get_parameter('max_object_size').value,
-                self.tall_cells())
+                self.cloud_points(), self.local.info, self.get_parameter('tall_radius').value,
+                self.get_parameter('tall_span').value)
         return self.objects
 
     def on_map(self, topic, msg):
