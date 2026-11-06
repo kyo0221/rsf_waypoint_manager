@@ -53,6 +53,17 @@ def generate_launch_description():
         output='screen',
     )
 
+    zone_editor_node = Node(
+        package='rsf_waypoint_manager',
+        executable='no_refuge_zone_editor',
+        name='no_refuge_zone_editor',
+        parameters=[{
+            'waypoints_file': LaunchConfiguration('waypoints_file'),
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
+        }],
+        output='screen',
+    )
+
     return LaunchDescription([
         waypoints_file_arg,
         profiles_file_arg,
@@ -60,4 +71,5 @@ def generate_launch_description():
         waypoint_navigator_node,
         queue_guard_node,
         yield_guard_node,
+        zone_editor_node,
     ])

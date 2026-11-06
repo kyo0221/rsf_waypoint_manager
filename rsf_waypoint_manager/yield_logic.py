@@ -1,7 +1,9 @@
 import math
+import os
 from dataclasses import dataclass, field, replace
 
 import numpy as np
+import yaml
 from scipy import ndimage
 
 
@@ -435,3 +437,88 @@ def backup_distance(last, now, xy, step=0.4, limit=1.2, near=1.0, within=60.0):
     if last is not None and now - last[0] <= within and math.hypot(xy[0] - last[1][0], xy[1] - last[1][1]) <= near:
         count = last[2] + 1
     return min(step * count, limit), (now, xy, count)
+
+
+# ---- 退避禁止の範囲 (横断歩道と道路端の間の車道) ----
+
+def point_in_polygon(p, poly):
+    x, y = p
+    inside = False
+    n = len(poly)
+    for i in range(n):
+        x1, y1 = poly[i]
+        x2, y2 = poly[(i + 1) % n]
+        if (y1 > y) != (y2 > y) and x < x1 + (y - y1) * (x2 - x1) / (y2 - y1):
+            inside = not inside
+    return inside
+
+
+def zones_at(p, zones):
+    """p を含む範囲の添字の集合"""
+    return {i for i, z in enumerate(zones) if point_in_polygon(p, z['points'])}
+
+
+def in_zones(p, zones):
+    """p がどれかの範囲 (4 隅の多角形) の中にあれば True"""
+    return any(point_in_polygon(p, z['points']) for z in zones)
+
+
+def segment_hits_zones(a, b, zones, step=0.1, allow_exit=False):
+    """a から b への直線 (両端を含む, step[m] 刻み) が範囲を通れば True.
+    allow_exit: a がいる範囲の中を進むのと, そこから外へ出る向きは許す (別の範囲や外から戻った範囲は不可)"""
+    if not zones:
+        return False
+    n = max(1, int(math.hypot(b[0] - a[0], b[1] - a[1]) / step))
+    home = zones_at(a, zones) if allow_exit else set()
+    inside_home = bool(home)
+    for k in range(n + 1):
+        p = (a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n)
+        hit = zones_at(p, zones)
+        if not hit:
+            inside_home = False
+            continue
+        if inside_home and hit <= home:
+            continue
+        return True
+    return False
+
+
+def load_zones(path):
+    """範囲の yaml を [{'name', 'type', 'points': [[x, y] x4]}] で読む. 無ければ空"""
+    if not path or not os.path.exists(path):
+        return []
+    with open(path) as f:
+        raw = (yaml.safe_load(f) or {}).get('zones') or []
+    return [{'name': str(z.get('name', '')), 'type': str(z.get('type', 'roadway')),
+             'points': [[float(x), float(y)] for x, y in z['points']]} for z in raw]
+
+
+def save_zones(path, zones):
+    """realpath の先へ in-place で書く (キーの順は name/type/points)"""
+    out = [{'name': z['name'], 'type': z['type'], 'points': [[float(x), float(y)] for x, y in z['points']]}
+           for z in zones]
+    with open(os.path.realpath(path), 'w') as f:
+        yaml.safe_dump({'zones': out}, f, sort_keys=False, default_flow_style=None, allow_unicode=True)
+
+
+def zones_file_for(waypoints_file, param=''):
+    """範囲 yaml のパス: param が空なら <name>_wp.yaml に対する <name>_no_refuge_zones.yaml"""
+    if param:
+        return param
+    if waypoints_file.endswith('_wp.yaml'):
+        return waypoints_file[:-len('_wp.yaml')] + '_no_refuge_zones.yaml'
+    return ''
+
+
+def filter_points_outside_zones(points, zones):
+    """(範囲の外の点, 範囲の中の点)"""
+    kept = [p for p in points if not in_zones(p, zones)]
+    dropped = [p for p in points if in_zones(p, zones)]
+    return kept, dropped
+
+
+def oncoming_for_machine(oncoming, state, robot_xy, zones):
+    """状態機械へ渡す oncoming: 待避を始める前 (idle) にロボットが範囲内なら False (減速して渡り切るのを優先)"""
+    if oncoming and state == 'idle' and robot_xy is not None and in_zones(robot_xy, zones):
+        return False
+    return bool(oncoming)

@@ -23,8 +23,9 @@ from tf2_ros import Buffer, TransformListener
 
 from rsf_waypoint_manager.yield_logic import (
     align_angle, backup_distance, blocked_ahead, choose_fixed_refuge, cluster_points, find_leader, find_retreat, find_oncoming, find_refuge, follow_speed,
-    LeaderMonitor, near_stop_ahead, next_waypoint_index, obstacle_layer_action, points_near, predict_track, route_lane,
-    should_resend_refuge, should_skip_waypoint, smooth_limit, stalled, Tracker, tracks_in_frame, YieldStateMachine)
+    filter_points_outside_zones, in_zones, LeaderMonitor, load_zones, near_stop_ahead, next_waypoint_index, obstacle_layer_action, points_near, predict_track, route_lane,
+    oncoming_for_machine, segment_hits_zones, should_resend_refuge, should_skip_waypoint, smooth_limit, stalled, Tracker,
+    tracks_in_frame, YieldStateMachine, zones_file_for)
 
 
 def yaw_of(q):
@@ -71,7 +72,10 @@ class YieldGuard(Node):
         self.declare_parameter('refuge_points_file', '')
         self.declare_parameter('refuge_behind', 3.0)  # 前方と真横に無いときだけ後方を探す範囲
         self.declare_parameter('refuge_fixed_ahead', 5.0)
-        self._refuge_points_path, self._refuge_points = None, []
+        self._refuge_points_path, self._refuge_points, self._refuge_points_zones = None, [], None
+        # 退避禁止の範囲 (横断歩道と道路端の間の車道). 空なら waypoints_file の <name>_wp.yaml に対する <name>_no_refuge_zones.yaml
+        self.declare_parameter('no_refuge_zones_file', '')
+        self._zones_path, self._zones_mtime, self._zones = None, None, []
         self.declare_parameter('refuge_max_cost', 98)  # local costmap の値 (0-100). 99 以上はロボット中心が置けない
         self.declare_parameter('static_margin', 0.4)
         self.declare_parameter('min_height', 0.3)
@@ -355,7 +359,8 @@ class YieldGuard(Node):
             self.goal_done = True
         action = self.machine.step(
             now, enabled=self.get_parameter('enabled').value, running=self.nav_status == 'running',
-            paused=self.nav_status == 'paused', oncoming=self.oncoming is not None, goal_done=self.goal_done,
+            paused=self.nav_status == 'paused', goal_done=self.goal_done,
+            oncoming=oncoming_for_machine(self.oncoming is not None, self.machine.state, self.robot_xy, self.zones()),
             waiting_for=self.waiting_for)
         if action == 'pause':
             self.decision_lane = self.lane
@@ -553,20 +558,27 @@ class YieldGuard(Node):
         min_sep = self.get_parameter('refuge_min_sep').value
         _, opponent_l = lane.project(*self.decision_xy)
         robot_l = lane.project(*self.robot_xy)[1]
-        why = {'cost': 0, 'path': 0, 'exit': 0, 'sep': 0}
+        why = {'cost': 0, 'path': 0, 'exit': 0, 'sep': 0, 'zone': 0}
 
-        def path_clear(a, b):
+        zones = self.zones()
+
+        def cost_clear(a, b):
             n = max(2, int(math.hypot(b[0] - a[0], b[1] - a[1]) / 0.1))
             return all(cost(a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n) < 99 for k in range(1, n + 1))
+
+        def path_clear(a, b):
+            # 退避禁止の範囲は横切らない (今いる範囲から外へ出る向きは許す)
+            return cost_clear(a, b) and not segment_hits_zones(a, b, zones, allow_exit=True)
 
         def exit_clear(p):
             # 待機点で向きをそろえた後, レーンへ斜め前に戻れること (正面のコーン等で出られない点を除く)
             ps, _ = lane.project(*p)
-            return path_clear(p, lane.point(ps + 2.0, robot_l))
+            return cost_clear(p, lane.point(ps + 2.0, robot_l))
 
         def usable(p):
             # 外れた理由を数える (見つからなかったときのログ用)
-            for key, ok in (('sep', lambda: abs(lane.project(*p)[1] - opponent_l) >= min_sep),
+            for key, ok in (('zone', lambda: not in_zones(p, zones)),
+                            ('sep', lambda: abs(lane.project(*p)[1] - opponent_l) >= min_sep),
                             ('cost', lambda: cost(*p) <= limit),
                             ('path', lambda: path_clear(self.robot_xy, p)), ('exit', lambda: exit_clear(p))):
                 if not ok():
@@ -575,6 +587,9 @@ class YieldGuard(Node):
             return True
 
         def usable_free(p):
+            if in_zones(p, zones):
+                why['zone'] += 1
+                return False
             if cost(*p) > limit:
                 why['cost'] += 1
                 return False
@@ -598,7 +613,7 @@ class YieldGuard(Node):
         if refuge is None:
             # ポールの間などを抜けて相手が横を通れる所まで 2-5m 後ろへ下がる (歩行者側を優先, 出口の確認はしない)
             lats = (side * 1.0, side * 1.5, side * 0.5, 0.0) if side is not None else (0.0,)
-            refuge = find_retreat(lane, self.robot_xy, free=lambda p: cost(*p) <= limit and path_clear(self.robot_xy, p),
+            refuge = find_retreat(lane, self.robot_xy, free=lambda p: not in_zones(p, zones) and cost(*p) <= limit and path_clear(self.robot_xy, p),
                                   dists=tuple(np.arange(2.0, 5.01, 0.5)), laterals=lats)
             source = 'retreat'
         return refuge, source, why, side
@@ -609,14 +624,35 @@ class YieldGuard(Node):
         if not path:
             wp = self.get_parameter('waypoints_file').value
             path = wp[:-len('_wp.yaml')] + '_refuge_points.yaml' if wp.endswith('_wp.yaml') else ''
-        if path != self._refuge_points_path:
-            self._refuge_points_path, self._refuge_points = path, []
+        zones = self.zones()
+        if path != self._refuge_points_path or zones is not self._refuge_points_zones:
+            self._refuge_points_path, self._refuge_points_zones, self._refuge_points = path, zones, []
             if path and os.path.exists(path):
                 with open(path) as f:
-                    self._refuge_points = [(float(p['x']), float(p['y']))
-                                           for p in (yaml.safe_load(f) or {}).get('refuge_points') or []]
+                    points = [(float(p['x']), float(p['y']))
+                              for p in (yaml.safe_load(f) or {}).get('refuge_points') or []]
+                self._refuge_points, dropped = filter_points_outside_zones(points, zones)
+                for x, y in dropped:
+                    self.get_logger().warn(f'fixed refuge point ({x:.1f}, {y:.1f}) is in a no-refuge zone, ignored')
             self.get_logger().info(f'{len(self._refuge_points)} fixed refuge points loaded from {path}')
         return self._refuge_points
+
+    def zones(self):
+        """退避禁止の範囲. ファイルの mtime が変わったら読み直す (rviz で編集した結果を再起動なしで反映)"""
+        path = zones_file_for(self.get_parameter('waypoints_file').value, self.get_parameter('no_refuge_zones_file').value)
+        try:
+            mtime = os.stat(path).st_mtime if path else None
+        except OSError:
+            mtime = None
+        if path != self._zones_path or mtime != self._zones_mtime:
+            self._zones_path, self._zones_mtime = path, mtime
+            try:
+                self._zones = load_zones(path)
+            except Exception as e:
+                self.get_logger().error(f'failed to read no-refuge zones {path}: {e}')
+                self._zones = []
+            self.get_logger().info(f'{len(self._zones)} no-refuge zones loaded from {path}')
+        return self._zones
 
     def pedestrian_side(self, lane):
         """ロボットから見てレーンの左 (+1) / 右 (-1) のどちらに歩行者側の帯があるか. 左右 3.5m 以内に無ければ None"""
