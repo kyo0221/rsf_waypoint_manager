@@ -250,8 +250,8 @@ waypoints:
   radius: 1.3
   stop: false
   profile: speed_down_following
-- x: 44.832
-  y: 69.502
+- x: 45.23
+  y: 69.57
   yaw: 0.172
   radius: 0.85
   stop: true
@@ -266,8 +266,8 @@ waypoints:
   yaw: -0.109
   radius: 1.3
   stop: false
-- x: 73.341
-  y: 71.974
+- x: 73.74
+  y: 71.92
   yaw: -0.196
   radius: 0.85
   stop: true
@@ -319,8 +319,8 @@ waypoints:
   yaw: -0.085
   radius: 2.0
   stop: false
-- x: 157.595
-  y: 57.33
+- x: 157.20
+  y: 57.37
   yaw: -0.133
   radius: 0.85
   stop: true
@@ -339,8 +339,8 @@ waypoints:
   yaw: -0.045
   radius: 2.0
   stop: false
-- x: 186.112
-  y: 54.411
+- x: 185.61
+  y: 54.40
   yaw: 0.044
   radius: 0.85
   stop: true
@@ -425,8 +425,8 @@ waypoints:
   yaw: 1.442
   radius: 1.3
   stop: false
-- x: 281.359
-  y: 109.591
+- x: 281.41
+  y: 109.99
   yaw: 1.494
   radius: 0.85
   stop: true
@@ -471,8 +471,8 @@ waypoints:
   radius: 0.85
   stop: true  # 信号あり横断 (往路) の停止線1. 歩道の植え込みの北端付近
   profile: following
-- x: 288.35
-  y: 192.157
+- x: 288.40
+  y: 192.86
   yaw: 1.044
   radius: 0.85
   stop: true
@@ -1286,8 +1286,8 @@ waypoints:
   yaw: 3.04
   radius: 2.0
   stop: false
-- x: 169.627
-  y: 54.407
+- x: 169.13
+  y: 54.44
   yaw: -3.091
   radius: 0.85
   stop: true
