@@ -2,6 +2,50 @@ zones:
 - name: roadside_0
   type: roadway
   points:
+  - - 416.6
+    - -38.9
+  - - 421.1
+    - -39.15
+  - - 421.38
+    - -34.16
+  - - 416.88
+    - -33.91
+- name: roadside_1
+  type: roadway
+  points:
+  - - 421.1
+    - -39.15
+  - - 427.0
+    - -39.4
+  - - 427.21
+    - -34.4
+  - - 421.31
+    - -34.15
+- name: roadside_2
+  type: roadway
+  points:
+  - - 427.0
+    - -39.4
+  - - 429.3
+    - -39.35
+  - - 429.19
+    - -34.35
+  - - 426.89
+    - -34.4
+- name: roadside_3
+  type: roadway
+  points:
+  - - 429.3
+    - -39.35
+  - - 433.92
+    - -35.66
+  - - 430.8
+    - -31.75
+  - - 426.18
+    - -35.44
+- name: roadside_4
+  type: roadway
+  points:
   - - 433.92
     - -35.66
   - - 434.82
@@ -10,7 +54,7 @@ zones:
     - -27.67
   - - 428.96
     - -35.05
-- name: roadside_1
+- name: roadside_5
   type: roadway
   points:
   - - 434.82
@@ -21,7 +65,7 @@ zones:
     - -17.96
   - - 429.84
     - -27.8
-- name: roadside_2
+- name: roadside_6
   type: roadway
   points:
   - - 435.76
@@ -32,7 +76,7 @@ zones:
     - -11.33
   - - 430.77
     - -18.17
-- name: roadside_3
+- name: roadside_7
   type: roadway
   points:
   - - 436.13
@@ -43,7 +87,7 @@ zones:
     - -3.08
   - - 431.17
     - -11.0
-- name: roadside_4
+- name: roadside_8
   type: roadway
   points:
   - - 437.09
@@ -54,7 +98,7 @@ zones:
     - 3.6
   - - 432.11
     - -3.29
-- name: roadside_5
+- name: roadside_9
   type: roadway
   points:
   - - 437.63
@@ -65,7 +109,7 @@ zones:
     - 11.8
   - - 432.65
     - 3.67
-- name: roadside_6
+- name: roadside_10
   type: roadway
   points:
   - - 438.38
@@ -76,7 +120,7 @@ zones:
     - 20.45
   - - 433.4
     - 11.75
-- name: roadside_7
+- name: roadside_11
   type: roadway
   points:
   - - 439.09
@@ -87,7 +131,7 @@ zones:
     - 28.69
   - - 434.1
     - 20.32
-- name: roadside_8
+- name: roadside_12
   type: roadway
   points:
   - - 439.56
