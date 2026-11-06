@@ -660,3 +660,17 @@ def test_backup_distance_grows_when_stuck_again_at_same_place():
     assert d == pytest.approx(0.4)
     d, last = backup_distance((10.0, (0.0, 0.0), 2), 20.0, (3.0, 0.0))
     assert d == pytest.approx(0.4)
+
+
+def test_passing_oncoming_detects_close_approaching_track():
+    # 前方 4m・横 1.5m 以内をこちらへ向かってくる物体があればすれ違い中 (減速する)
+    from rsf_waypoint_manager.yield_logic import passing_oncoming
+    lane = straight_lane()
+    near = Track(id=1, x=13.0, y=0.8, vx=-0.5, vy=0.0, t=0.0, hits=5, reliable=True)
+    assert passing_oncoming(lane, 10.0, 0.0, [near], 4.0, 1.5, 0.2)
+    far = Track(id=2, x=16.0, y=0.0, vx=-0.5, vy=0.0, t=0.0, hits=5, reliable=True)
+    assert not passing_oncoming(lane, 10.0, 0.0, [far], 4.0, 1.5, 0.2)
+    same_way = Track(id=3, x=12.0, y=0.0, vx=0.5, vy=0.0, t=0.0, hits=5, reliable=True)
+    assert not passing_oncoming(lane, 10.0, 0.0, [same_way], 4.0, 1.5, 0.2)
+    wide = Track(id=4, x=12.0, y=2.0, vx=-0.5, vy=0.0, t=0.0, hits=5, reliable=True)
+    assert not passing_oncoming(lane, 10.0, 0.0, [wide], 4.0, 1.5, 0.2)

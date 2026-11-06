@@ -522,3 +522,17 @@ def oncoming_for_machine(oncoming, state, robot_xy, zones):
     if oncoming and state == 'idle' and robot_xy is not None and in_zones(robot_xy, zones):
         return False
     return bool(oncoming)
+
+
+def passing_oncoming(lane, robot_s, robot_l, tracks, ahead, lateral, min_speed):
+    """前方 ahead[m] 以内・横 lateral[m] 以内を min_speed[m/s] 以上でこちらへ向かってくる track があれば True (すれ違い中)"""
+    for tr in tracks:
+        if not tr.reliable:
+            continue
+        s, lat = lane.project(tr.x, tr.y)
+        if not -1.0 <= s - robot_s <= ahead or abs(lat - robot_l) > lateral:
+            continue
+        h = lane.heading(s)
+        if -(tr.vx * math.cos(h) + tr.vy * math.sin(h)) >= min_speed:
+            return True
+    return False

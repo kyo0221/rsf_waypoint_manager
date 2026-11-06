@@ -12,6 +12,7 @@ import math
 DEFAULT = 'default'
 SIGNAL_QUEUE = 'signal_queue'
 QUEUE_ZONE = 0.0
+PASSING_SPEED = 0.4
 
 
 def near_stop(waypoints, index, within):
@@ -102,7 +103,12 @@ class ProfileManager:
         node.create_subscription(Float32, '~/speed_override', self.on_override, 10)
         self.oncoming = False
         node.create_subscription(Bool, '/yield_guard/oncoming_ahead', self.on_oncoming, 10)
+        self.passing = False
+        node.create_subscription(Bool, '/yield_guard/passing', self.on_passing, 10)
         node.create_timer(0.1, self.publish_speed)
+
+    def on_passing(self, msg):
+        self.passing = msg.data
 
     def on_oncoming(self, msg):
         self.oncoming = msg.data
@@ -113,7 +119,8 @@ class ProfileManager:
     def publish_speed(self):
         if self.current is None:
             return
-        limits = [v for v in (self.profiles[self.current]['speed_limit'], self.override, self.approach) if v > 0.0]
+        passing = PASSING_SPEED if self.passing else 0.0  # 向かってくる物体とすれ違う間は減速
+        limits = [v for v in (self.profiles[self.current]['speed_limit'], self.override, self.approach, passing) if v > 0.0]
         limit = min(limits) if limits else 0.0
         msg = SpeedLimit()
         msg.header.stamp = self.node.get_clock().now().to_msg()

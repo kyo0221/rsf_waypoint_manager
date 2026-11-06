@@ -23,7 +23,7 @@ from tf2_ros import Buffer, TransformListener
 
 from rsf_waypoint_manager.yield_logic import (
     align_angle, backup_distance, blocked_ahead, choose_fixed_refuge, cluster_points, find_leader, find_retreat, find_oncoming, find_refuge, follow_speed,
-    filter_points_outside_zones, in_zones, LeaderMonitor, load_zones, near_stop_ahead, next_waypoint_index, obstacle_layer_action, points_near, predict_track, route_lane,
+    filter_points_outside_zones, in_zones, LeaderMonitor, load_zones, near_stop_ahead, next_waypoint_index, passing_oncoming, obstacle_layer_action, points_near, predict_track, route_lane,
     oncoming_for_machine, segment_hits_zones, should_resend_refuge, should_skip_waypoint, smooth_limit, stalled, Tracker,
     tracks_in_frame, YieldStateMachine, zones_file_for)
 
@@ -143,6 +143,8 @@ class YieldGuard(Node):
         self.create_subscription(Float32, '/waypoint_navigator/speed_override', self.on_override, 10)
         self.state_pub = self.create_publisher(String, '~/state', transient)
         self.oncoming_pub = self.create_publisher(Bool, '~/oncoming_ahead', 10)
+        self.passing_pub = self.create_publisher(Bool, '~/passing', 10)
+        self.passing_until, self.passing_ids = 0.0, {}
         self.blocker = None
         self.speed_pub = self.create_publisher(Float32, '/waypoint_navigator/speed_override', 10)
         self.create_timer(0.1, self.tick)
@@ -230,6 +232,17 @@ class YieldGuard(Node):
             self.get_parameter('min_speed').value, self.get_parameter('min_hits').value,
             self.get_parameter('min_ahead').value, now, min_travel=self.get_parameter('min_travel').value)
         self.oncoming = oncoming
+        # 向かってくる物体とすれ違う間 (前方 4m・横 1.5m 以内) は減速させる (速度の上限はプロファイル管理が決める)
+        robot_l = lane.project(rx, ry)[1]
+        for tr in tracks:
+            if passing_oncoming(lane, robot_s, robot_l, [tr], 4.0, 1.5, 0.2):
+                self.passing_ids[tr.id] = now
+        # 一度向かってきた物体は止まっても 15 秒は覚えておく (止まった相手の横を加速して抜けないため)
+        self.passing_ids = {i: t for i, t in self.passing_ids.items() if now - t < 15.0}
+        near = [tr for tr in tracks if tr.id in self.passing_ids]
+        if passing_oncoming(lane, robot_s, robot_l, near, 4.0, 1.5, -math.inf):
+            self.passing_until = now + 1.5
+        self.passing_pub.publish(Bool(data=now < self.passing_until))
         for tr in odom_tracks:
             if tr.id == self.target_id:
                 self.target_last = tr
