@@ -50,12 +50,12 @@ waypoints:
   yaw: 2.583
   radius: 1.3
   stop: false
-  profile: following  # WP9-18: 両側が芝生の細い通路 (WP10-) とその手前. 通路の手前で追い越しを始めないよう WP9 から. 追い越さず追従し, 塞がれたら待つ
 - x: -25.453
   y: 26.047
   yaw: 2.95
   radius: 1.3
   stop: false
+  profile: following  # WP10-18: 両側が芝生の細い通路. 追い越さず追従し, 塞がれたら待つ (WP9 で付けると WP9 で止まり続けたので WP10 から)
 - x: -32.763
   y: 26.62
   yaw: 3.045
