@@ -22,7 +22,7 @@ from std_srvs.srv import Trigger
 from tf2_ros import Buffer, TransformListener
 
 from rsf_waypoint_manager.yield_logic import (
-    align_angle, backup_distance, blocked_ahead, choose_fixed_refuge, cluster_points, find_leader, find_retreat, find_oncoming, find_refuge, follow_speed,
+    align_angle, backup_distance, blocked_ahead, choose_fixed_refuge, cluster_points, exclude_cones, find_leader, find_retreat, find_oncoming, find_refuge, follow_speed,
     filter_points_outside_zones, in_zones, LeaderMonitor, load_zones, near_stop_ahead, next_waypoint_index, passing_oncoming, obstacle_layer_action, points_near, predict_track, route_lane,
     oncoming_for_machine, segment_hits_zones, should_resend_refuge, should_skip_waypoint, SKIP_RADIUS, smooth_limit, stalled, Tracker,
     tracks_in_frame, YieldStateMachine, zones_file_for)
@@ -80,6 +80,9 @@ class YieldGuard(Node):
         self.declare_parameter('static_margin', 0.4)
         self.declare_parameter('min_height', 0.3)
         self.declare_parameter('max_height', 2.0)
+        # 追従相手から外すコーン形状の上限 (実走のコーンは見える高さの幅 0.45〜0.75m, 人は 1m 以上). 0 以下で無効
+        self.declare_parameter('cone_max_span', 0.85)
+        self.declare_parameter('cone_max_width', 0.45)
         self.route, self.stops, self.profiles = [], [], []
         path = self.get_parameter('waypoints_file').value
         if path:
@@ -88,7 +91,8 @@ class YieldGuard(Node):
             self.route = [(float(w['x']), float(w['y'])) for w in waypoints]
             self.stops = [bool(w.get('stop', False)) for w in waypoints]
             self.profiles = [w.get('profile') for w in waypoints]
-        self.tracker = Tracker(window=2.0, min_span=1.0)
+        self.tracker = Tracker(window=2.0, min_span=1.0, cone_max_span=self.get_parameter('cone_max_span').value,
+                               cone_max_width=self.get_parameter('cone_max_width').value)
         self.machine = YieldStateMachine(
             self.get_parameter('clear_time').value, self.get_parameter('max_wait').value,
             self.get_parameter('cooldown').value, confirm_time=self.get_parameter('confirm_time').value)
@@ -203,10 +207,11 @@ class YieldGuard(Node):
             c, s = math.cos(oyaw), math.sin(oyaw)
             xy = np.column_stack([ox + c * pts[:, 0] - s * pts[:, 1], oy + s * pts[:, 0] + c * pts[:, 1]])
             near = np.hypot(xy[:, 0] - rx, xy[:, 1] - ry) < ahead + 2.0
-            xy = xy[near]
+            xy, z = xy[near], pts[near, 2]  # z は高さの幅だけに使う (frame が地面基準でなくても平行移動の影響は無い)
             if len(xy):
                 ps, pl = lane.project_many(xy)
-                xy = xy[(np.abs(pl) < half + 0.5) & (ps > robot_s - 2.0) & (ps < robot_s + ahead + 1.0)]
+                keep = (np.abs(pl) < half + 0.5) & (ps > robot_s - 2.0) & (ps < robot_s + ahead + 1.0)
+                xy, z = xy[keep], z[keep]
             if len(xy) and self.static is not None:
                 info, mask = self.static
                 mi = np.floor((xy[:, 0] - info.origin.position.x) / info.resolution).astype(int)
@@ -214,16 +219,16 @@ class YieldGuard(Node):
                 ok = (mi >= 0) & (mi < info.width) & (mj >= 0) & (mj < info.height)
                 hit = np.zeros(len(xy), dtype=bool)
                 hit[ok] = mask[mj[ok], mi[ok]]
-                xy = xy[~hit]
+                xy, z = xy[~hit], z[~hit]
         else:
-            xy = np.zeros((0, 2))
+            xy, z = np.zeros((0, 2)), np.zeros(0)
         now = rclpy.time.Time.from_msg(msg.header.stamp).nanoseconds * 1e-9
         self.reset_on_odom_jump(now, odom)
         # 追跡は odom 系で行う (自己位置の補正で map 系の位置が滑っても静止物が動いて見えない)
         c, s = math.cos(odom_map[2]), math.sin(odom_map[2])
         xy_odom = np.column_stack([
             odom_map[0] + c * xy[:, 0] - s * xy[:, 1], odom_map[1] + s * xy[:, 0] + c * xy[:, 1]])
-        odom_tracks = self.tracker.update(now, cluster_points(xy_odom))
+        odom_tracks = self.tracker.update(now, cluster_points(xy_odom, z=z))
         tracks = tracks_in_frame(odom_tracks, *map_odom)
         self.lane, self.robot_s, self.robot_xy = lane, robot_s, (rx, ry)
         self.obstacle_xy = xy
@@ -288,7 +293,7 @@ class YieldGuard(Node):
     def update_leader(self, lane, robot_s, tracks, odom_tracks, map_odom, now):
         """同じ向きに進む前方の相手を追い越さずに追従する. 一度追従した相手は止まっても最後の位置の後ろで待つ"""
         half = self.get_parameter('follow_half_width').value
-        candidates = [tr for tr in tracks if tr.id not in self.leader_monitor.released]
+        candidates = [tr for tr in exclude_cones(tracks) if tr.id not in self.leader_monitor.released]
         leader = find_leader(lane, robot_s, candidates, half, self.get_parameter('ahead').value,
                              self.get_parameter('follow_min_speed').value, self.get_parameter('min_hits').value, now,
                              min_travel=self.get_parameter('follow_min_travel').value)

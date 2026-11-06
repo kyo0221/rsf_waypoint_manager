@@ -68,7 +68,29 @@ def route_lane(route, x, y, ahead, hint=None, before=3, after=10):
     return Lane(pts[k:end + 1])
 
 
-def cluster_points(xy, cell=0.2, min_points=3):
+def horizontal_width(xy):
+    """点群の水平の広がり [m]: 0/45/90/135 度の4方向へ射影した幅の最大 (向きによらず直径に近い)"""
+    best = 0.0
+    for a in (0.0, math.pi / 4, math.pi / 2, 3 * math.pi / 4):
+        d = xy[:, 0] * math.cos(a) + xy[:, 1] * math.sin(a)
+        best = max(best, float(d.max() - d.min()))
+    return best
+
+
+def is_cone_shape(span, width, max_span, max_width):
+    """高さの幅 span と水平の広がり width がどちらも上限以下ならコーンの形. 上限が 0 以下なら無効 (常に False)"""
+    if max_span <= 0.0 or max_width <= 0.0:
+        return False
+    return span <= max_span and width <= max_width
+
+
+def exclude_cones(tracks):
+    """コーン形状と判定された track を除いたもの (追従相手の候補用)"""
+    return [tr for tr in tracks if not tr.cone]
+
+
+def cluster_points(xy, cell=0.2, min_points=3, z=None):
+    """xy をクラスタにして (x, y, 点数) を返す. z を渡すと (x, y, 点数, 高さの幅, 水平の広がり) を返す"""
     if len(xy) == 0:
         return []
     ij = np.floor(xy / cell).astype(int)
@@ -81,8 +103,13 @@ def cluster_points(xy, cell=0.2, min_points=3):
     clusters = []
     for k in range(1, count + 1):
         member = xy[point_labels == k]
-        if len(member) >= min_points:
-            clusters.append((float(member[:, 0].mean()), float(member[:, 1].mean()), len(member)))
+        if len(member) < min_points:
+            continue
+        c = (float(member[:, 0].mean()), float(member[:, 1].mean()), len(member))
+        if z is not None:
+            mz = z[point_labels == k]
+            c += (float(mz.max() - mz.min()), horizontal_width(member))
+        clusters.append(c)
     return clusters
 
 
@@ -99,12 +126,16 @@ class Track:
     history: list = field(default_factory=list)
     reliable: bool = False
     span: float = 0.0
+    cone_count: int = 0
+    cone: bool = False
 
 
 class Tracker:
     """最近傍で対応付け, 速度は window 秒の位置履歴への直線当てはめで求める (短い履歴, 大きな残差, 速すぎる track は速度不明)"""
 
-    def __init__(self, gate=0.8, max_age=1.0, window=1.0, min_span=0.6, max_residual=0.15, max_speed=2.5):
+    def __init__(self, gate=0.8, max_age=1.0, window=1.0, min_span=0.6, max_residual=0.15, max_speed=2.5,
+                 cone_max_span=0.85, cone_max_width=0.45, cone_frames=2):
+        self.cone_max_span, self.cone_max_width, self.cone_frames = cone_max_span, cone_max_width, cone_frames
         self.gate, self.max_age = gate, max_age
         self.window, self.min_span, self.max_residual, self.max_speed = window, min_span, max_residual, max_speed
         self.tracks = []
@@ -132,9 +163,16 @@ class Tracker:
             return
         tr.vx, tr.vy, tr.reliable = vx, vy, True
 
+    def mark_cone(self, tr, c):
+        """対応したクラスタ c (x, y, n[, 高さの幅, 広がり]) がコーン形状なら連続回数を増やし, 違えば 0 に戻す (人を誤って除外しない)"""
+        shaped = len(c) > 4 and is_cone_shape(c[3], c[4], self.cone_max_span, self.cone_max_width)
+        tr.cone_count = tr.cone_count + 1 if shaped else 0
+        tr.cone = tr.cone_count >= self.cone_frames
+
     def update(self, t, centroids):
         free = list(self.tracks)
-        for x, y in ((c[0], c[1]) for c in centroids):
+        for c in centroids:
+            x, y = c[0], c[1]
             best = None
             for tr in free:
                 dt = t - tr.t
@@ -142,13 +180,16 @@ class Tracker:
                 if d < self.gate and (best is None or d < best[0]):
                     best = (d, tr)
             if best is None:
-                self.tracks.append(Track(self.next_id, x, y, t=t, history=[(t, x, y)]))
+                tr = Track(self.next_id, x, y, t=t, history=[(t, x, y)])
+                self.mark_cone(tr, c)
+                self.tracks.append(tr)
                 self.next_id += 1
                 continue
             tr = best[1]
             free.remove(tr)
             tr.x, tr.y, tr.t, tr.hits = x, y, t, tr.hits + 1
             tr.history.append((t, x, y))
+            self.mark_cone(tr, c)
             self.fit(tr)
         self.tracks = [tr for tr in self.tracks if t - tr.t <= self.max_age]
         return list(self.tracks)

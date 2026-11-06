@@ -687,3 +687,68 @@ def test_robot_parked_on_waypoint_still_blocks_it():
     from rsf_waypoint_manager.yield_logic import SKIP_RADIUS, should_skip_waypoint
     box = [(10.0 + x, y) for x in np.linspace(-0.4, 0.4, 9) for y in (-0.3, 0.3)]  # 0.8x0.6 の側面の点
     assert should_skip_waypoint((10.0, 0.0), False, (5.0, 0.0), np.array(box), SKIP_RADIUS, 7.0)
+
+
+# ---- コーン形状の除外 (静止したコーンを追従相手にしない) ----
+
+def cone_points(cx, cy, height=0.7, radius=0.15, n=30):
+    a = np.linspace(0, 2 * np.pi, n, endpoint=False)
+    return (np.column_stack([cx + radius * np.cos(a), cy + radius * np.sin(a)]),
+            np.linspace(0.0, height, n))
+
+
+def test_is_cone_shape_cone_true_person_false_and_disabled():
+    from rsf_waypoint_manager.yield_logic import is_cone_shape
+    assert is_cone_shape(0.7, 0.3, 0.85, 0.45)
+    assert not is_cone_shape(1.2, 0.5, 0.85, 0.45)
+    assert not is_cone_shape(0.7, 0.3, 0.0, 0.45)
+    assert not is_cone_shape(0.7, 0.3, 0.85, 0.0)
+
+
+def test_cluster_points_with_z_returns_span_and_width():
+    xy, z = cone_points(5.0, 2.0, height=0.7, radius=0.15)
+    (x, y, n, span, width), = cluster_points(xy, z=z)
+    assert (x, y, n) == pytest.approx((5.0, 2.0, 30), abs=0.01)
+    assert span == pytest.approx(0.7)
+    assert width == pytest.approx(0.3, abs=0.02)
+
+
+def test_cluster_points_without_z_is_unchanged():
+    xy, _ = cone_points(5.0, 2.0)
+    (c,) = cluster_points(xy)
+    assert len(c) == 3
+
+
+def test_tracker_cone_after_two_consecutive_cone_shapes_and_reset_by_person():
+    tk = Tracker(gate=0.8)
+    cone, person = (5.0, 0.0, 30, 0.7, 0.3), (5.0, 0.0, 30, 1.2, 0.5)
+    assert not tk.update(0.0, [cone])[0].cone
+    assert tk.update(0.1, [cone])[0].cone
+    assert not tk.update(0.2, [person])[0].cone
+    assert not tk.update(0.3, [cone])[0].cone
+    assert tk.update(0.4, [cone])[0].cone
+
+
+def test_tracker_without_shape_never_cone():
+    tk = Tracker()
+    for i in range(4):
+        assert not tk.update(0.1 * i, [(5.0, 0.0, 30)])[0].cone
+
+
+def test_tracker_cone_limits_are_configurable():
+    tk = Tracker(cone_max_span=0.0)
+    for i in range(3):
+        assert not tk.update(0.1 * i, [(5.0, 0.0, 30, 0.7, 0.3)])[0].cone
+
+
+def test_exclude_cones_drops_only_cone_tracks_from_leader_candidates():
+    from rsf_waypoint_manager.yield_logic import exclude_cones, find_leader
+    lane = straight_lane()
+
+    def moving(i, cone):
+        return Track(i, 6.0, 0.0, vx=0.5, hits=5, t=1.0, reliable=True, span=1.0, cone=cone)
+    tracks = [moving(0, True), moving(1, False)]
+    assert find_leader(lane, 0.0, tracks, 0.6, 18.0, 0.15, 3).id == 0
+    leader = find_leader(lane, 0.0, exclude_cones(tracks), 0.6, 18.0, 0.15, 3)
+    assert leader.id == 1
+    assert find_leader(lane, 0.0, exclude_cones(tracks[:1]), 0.6, 18.0, 0.15, 3) is None
