@@ -5,6 +5,8 @@ import rclpy
 import yaml
 from map_msgs.msg import OccupancyGridUpdate
 from nav_msgs.msg import OccupancyGrid, Path
+from sensor_msgs.msg import PointCloud2
+from sensor_msgs_py import point_cloud2
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile
 from scipy import ndimage
@@ -12,11 +14,49 @@ from std_msgs.msg import Float32
 from tf2_ros import Buffer, TransformListener
 
 
+def dilate(mask, resolution, radius):
+    """bool マスクを半径 radius [m] の円で膨らませる"""
+    cells = math.ceil(radius / resolution)
+    if cells <= 0:
+        return mask
+    y, x = np.ogrid[-cells:cells + 1, -cells:cells + 1]
+    return ndimage.binary_dilation(mask, structure=(x * x + y * y) <= cells * cells)
+
+
 def static_mask(grid, resolution, margin):
     """占有 (>=65) セルを margin [m] だけ膨らませた bool マスク"""
-    cells = max(1, math.ceil(margin / resolution))
-    y, x = np.ogrid[-cells:cells + 1, -cells:cells + 1]
-    return ndimage.binary_dilation(grid >= 65, structure=(x * x + y * y) <= cells * cells)
+    return dilate(grid >= 65, resolution, max(margin, resolution))
+
+
+def tall_mask(points, info, radius):
+    """格子の座標系の点 [[x, y], ...] (背の高い物の点) のあるセルを radius [m] 膨らませた bool マスク"""
+    mask = np.zeros((info.height, info.width), dtype=bool)
+    if len(points) == 0:
+        return mask
+    i = np.floor((points[:, 0] - info.origin.position.x) / info.resolution).astype(int)
+    j = np.floor((points[:, 1] - info.origin.position.y) / info.resolution).astype(int)
+    ok = (i >= 0) & (i < info.width) & (j >= 0) & (j < info.height)
+    mask[j[ok], i[ok]] = True
+    return dilate(mask, info.resolution, radius)
+
+
+def queue_objects(lethal, resolution, min_size, max_size, tall=None):
+    """前に並ぶ物体として数えるセルの bool マスク.
+    max_size [m] を超える塊 (壁・植え込み) は数えない. min_size [m] 未満の塊 (コーン等) は,
+    背の高い点 (tall) と重なるときだけ数える: 人は LiDAR で脚 2 本の小さな塊に分かれても, 胴体の点が上にある"""
+    labels, count = ndimage.label(lethal, structure=np.ones((3, 3)))
+    has_tall = np.zeros(count + 1, dtype=bool)
+    if tall is not None:
+        has_tall[np.unique(labels[tall & lethal])] = True
+        has_tall[0] = False
+    keep = np.zeros(count + 1, dtype=bool)
+    lower, limit = min_size / resolution, max_size / resolution
+    for k, sl in enumerate(ndimage.find_objects(labels), start=1):
+        if sl is None:
+            continue
+        size = max(sl[0].stop - sl[0].start, sl[1].stop - sl[1].start)
+        keep[k] = size <= limit and (size >= lower or has_tall[k])
+    return keep[labels]
 
 
 def static_hit(statics, px, py):
@@ -45,7 +85,11 @@ class QueueGuard(Node):
         self.declare_parameter('lethal', 100)
         self.declare_parameter('max_object_size', 1.5)
         self.declare_parameter('use_route', False)  # 経路 (/plan) でなく waypoint の線に沿って前の物体を探す (経路が列を回り込んでも止まる)
-        self.declare_parameter('min_object_size', 0.0)  # これより小さい塊 (コーン等) は前の物体として数えない
+        self.declare_parameter('min_object_size', 0.0)  # これより小さい塊 (コーン等) は, 背の高い点が上に無ければ前の物体として数えない
+        # 背の高い物 (人) の判定: 点群でこの高さ [m] (base_footprint 基準) 以上の点がある塊は小さくても数える. 0 で使わない
+        self.declare_parameter('tall_height', 0.0)
+        self.declare_parameter('tall_radius', 0.3)  # 胴体の点と脚の塊を結びつける距離 [m]
+        self.declare_parameter('tall_points_topic', '/ground_segmentation/obstacle_points')
         # 前走物体として数えない静的マスク. 芝生マスク (keepout) を local costmap に入れると,
         # その縁が小さな塊として「前方の物体」に見えて停止するため, /map と同様に除外する
         self.declare_parameter('static_mask_topics', ['/map', '/grass_filter_mask'])
@@ -59,6 +103,7 @@ class QueueGuard(Node):
         self.grid = None
         self.objects = None
         self.statics = {}
+        self.cloud = None
         self.active = False
         transient = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.create_subscription(Path, '/plan', self.on_plan, 1)
@@ -67,6 +112,7 @@ class QueueGuard(Node):
         for topic in self.get_parameter('static_mask_topics').value:
             self.create_subscription(
                 OccupancyGrid, topic, lambda msg, topic=topic: self.on_map(topic, msg), transient)
+        self.create_subscription(PointCloud2, self.get_parameter('tall_points_topic').value, self.on_cloud, 1)
         self.pub = self.create_publisher(Float32, '/waypoint_navigator/speed_override', 10)
         self.distance_pub = self.create_publisher(Float32, '~/obstacle_distance', 10)
         self.buf = Buffer()
@@ -88,17 +134,29 @@ class QueueGuard(Node):
         self.grid[msg.y:msg.y + msg.height, msg.x:msg.x + msg.width] = patch
         self.objects = None
 
+    def on_cloud(self, msg):
+        self.cloud = msg
+        self.objects = None
+
+    def tall_cells(self):
+        """点群のうち tall_height 以上の点を local costmap の格子に落としたマスク. 使わない設定なら None"""
+        height = self.get_parameter('tall_height').value
+        if height <= 0.0 or self.cloud is None:
+            return None
+        points = point_cloud2.read_points_numpy(self.cloud, field_names=('x', 'y', 'z'), skip_nans=True)
+        points = points[points[:, 2] >= height]
+        if len(points):
+            ox, oy, oyaw = self.pose(self.local.header.frame_id, self.cloud.header.frame_id)
+            c, s = math.cos(oyaw), math.sin(oyaw)
+            points = np.stack([ox + points[:, 0] * c - points[:, 1] * s, oy + points[:, 0] * s + points[:, 1] * c], axis=1)
+        return tall_mask(points[:, :2], self.local.info, self.get_parameter('tall_radius').value)
+
     def object_mask(self):
         if self.objects is None:
-            lethal = self.grid >= self.get_parameter('lethal').value
-            labels, count = ndimage.label(lethal, structure=np.ones((3, 3)))
-            small = np.zeros(count + 1, dtype=bool)
-            limit = self.get_parameter('max_object_size').value / self.local.info.resolution
-            lower = self.get_parameter('min_object_size').value / self.local.info.resolution
-            for k, sl in enumerate(ndimage.find_objects(labels), start=1):
-                if sl is not None and lower <= max(sl[0].stop - sl[0].start, sl[1].stop - sl[1].start) <= limit:
-                    small[k] = True
-            self.objects = small[labels]
+            self.objects = queue_objects(
+                self.grid >= self.get_parameter('lethal').value, self.local.info.resolution,
+                self.get_parameter('min_object_size').value, self.get_parameter('max_object_size').value,
+                self.tall_cells())
         return self.objects
 
     def on_map(self, topic, msg):
