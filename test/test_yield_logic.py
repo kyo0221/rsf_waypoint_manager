@@ -752,3 +752,26 @@ def test_exclude_cones_drops_only_cone_tracks_from_leader_candidates():
     leader = find_leader(lane, 0.0, exclude_cones(tracks), 0.6, 18.0, 0.15, 3)
     assert leader.id == 1
     assert find_leader(lane, 0.0, exclude_cones(tracks[:1]), 0.6, 18.0, 0.15, 3) is None
+
+
+def test_static_hits_marks_points_on_masked_cells():
+    from types import SimpleNamespace
+    from rsf_waypoint_manager.yield_logic import static_hits
+    info = SimpleNamespace(origin=SimpleNamespace(position=SimpleNamespace(x=0.0, y=0.0)), resolution=0.5, width=4, height=4)
+    mask = np.zeros((4, 4), dtype=bool)
+    mask[1, 2] = True  # (x 1.0-1.5, y 0.5-1.0)
+    hit = static_hits(np.array([[1.2, 0.7], [0.2, 0.2], [9.0, 9.0]]), info, mask)
+    assert hit.tolist() == [True, False, False]
+
+
+def test_split_obstacles_keeps_static_points_for_stall_check():
+    """地図の固定物 (静的マスク) の点は追従や対向の判定からは外すが, 詰まりの判定 (正面が塞がれているか) には残す"""
+    from rsf_waypoint_manager.yield_logic import blocked_ahead, split_obstacles
+    xy = np.array([[0.5, 0.1], [3.0, 2.0]])  # 正面 0.5m の固定物と, 経路の外の点
+    z = np.array([0.5, 0.5])
+    lane_keep = np.array([True, False])
+    hit = np.array([True, False])
+    dyn_xy, dyn_z, stall_xy = split_obstacles(xy, z, lane_keep, hit)
+    assert len(dyn_xy) == 0 and len(dyn_z) == 0
+    assert not blocked_ahead(dyn_xy, (0.0, 0.0, 0.0), 0.9, 0.65)
+    assert blocked_ahead(stall_xy, (0.0, 0.0, 0.0), 0.9, 0.65)

@@ -465,6 +465,22 @@ def stalled(history, now, window, min_move):
     return max(math.hypot(x - x0, y - y0) for _, (x, y) in recent) < min_move
 
 
+def static_hits(xy, info, mask):
+    """map 座標の点 xy のうち, 静的マスク mask (info: OccupancyGrid の info) の占有セルに入るものを True にした配列"""
+    mi = np.floor((xy[:, 0] - info.origin.position.x) / info.resolution).astype(int)
+    mj = np.floor((xy[:, 1] - info.origin.position.y) / info.resolution).astype(int)
+    ok = (mi >= 0) & (mi < info.width) & (mj >= 0) & (mj < info.height)
+    hit = np.zeros(len(xy), dtype=bool)
+    hit[ok] = mask[mj[ok], mi[ok]]
+    return hit
+
+
+def split_obstacles(xy, z, lane_keep, hit):
+    """追従・対向の判定用 (経路の帯の中で地図の固定物でない点) の xy, z と, 詰まりの判定用 (固定物も含む全点) の xy"""
+    keep = lane_keep & ~hit
+    return xy[keep], z[keep], xy
+
+
 def blocked_ahead(points, pose, ahead, half_width):
     """map 座標の点のうち, ロボット (x, y, yaw) の正面 ahead[m] 以内・横 half_width[m] 以内にあるものがあれば True"""
     x, y, yaw = pose

@@ -24,7 +24,7 @@ from tf2_ros import Buffer, TransformListener
 from rsf_waypoint_manager.yield_logic import (
     align_angle, backup_distance, blocked_ahead, choose_fixed_refuge, cluster_points, exclude_cones, find_leader, find_retreat, find_oncoming, find_refuge, follow_speed,
     filter_points_outside_zones, in_zones, LeaderMonitor, load_zones, near_stop_ahead, next_waypoint_index, passing_oncoming, obstacle_layer_action, points_near, predict_track, route_lane,
-    oncoming_for_machine, segment_hits_zones, should_resend_refuge, should_skip_waypoint, SKIP_RADIUS, smooth_limit, stalled, Tracker,
+    oncoming_for_machine, segment_hits_zones, should_resend_refuge, should_skip_waypoint, SKIP_RADIUS, smooth_limit, split_obstacles, stalled, static_hits, Tracker,
     tracks_in_frame, YieldStateMachine, zones_file_for)
 
 
@@ -208,20 +208,16 @@ class YieldGuard(Node):
             xy = np.column_stack([ox + c * pts[:, 0] - s * pts[:, 1], oy + s * pts[:, 0] + c * pts[:, 1]])
             near = np.hypot(xy[:, 0] - rx, xy[:, 1] - ry) < ahead + 2.0
             xy, z = xy[near], pts[near, 2]  # z は高さの幅だけに使う (frame が地面基準でなくても平行移動の影響は無い)
+            keep, hit = np.ones(len(xy), dtype=bool), np.zeros(len(xy), dtype=bool)
             if len(xy):
                 ps, pl = lane.project_many(xy)
                 keep = (np.abs(pl) < half + 0.5) & (ps > robot_s - 2.0) & (ps < robot_s + ahead + 1.0)
-                xy, z = xy[keep], z[keep]
             if len(xy) and self.static is not None:
-                info, mask = self.static
-                mi = np.floor((xy[:, 0] - info.origin.position.x) / info.resolution).astype(int)
-                mj = np.floor((xy[:, 1] - info.origin.position.y) / info.resolution).astype(int)
-                ok = (mi >= 0) & (mi < info.width) & (mj >= 0) & (mj < info.height)
-                hit = np.zeros(len(xy), dtype=bool)
-                hit[ok] = mask[mj[ok], mi[ok]]
-                xy, z = xy[~hit], z[~hit]
+                hit = static_hits(xy, *self.static)
+            # 地図の固定物は追従・対向の判定から外すが, 詰まりの判定 (正面が塞がれているか) には残す
+            xy, z, stall_xy = split_obstacles(xy, z, keep, hit)
         else:
-            xy, z = np.zeros((0, 2)), np.zeros(0)
+            xy, z, stall_xy = np.zeros((0, 2)), np.zeros(0), np.zeros((0, 2))
         now = rclpy.time.Time.from_msg(msg.header.stamp).nanoseconds * 1e-9
         self.reset_on_odom_jump(now, odom)
         # 追跡は odom 系で行う (自己位置の補正で map 系の位置が滑っても静止物が動いて見えない)
@@ -253,7 +249,7 @@ class YieldGuard(Node):
                 self.target_last = tr
         self.update_leader(lane, robot_s, tracks, odom_tracks, map_odom, now)
         self.skip_blocked_waypoint(xy, rx, ry)
-        self.check_stall(xy, rx, ry, now)
+        self.check_stall(stall_xy, rx, ry, now)
         self.waiting_for = False
         if self.target_last is not None:
             last = tracks_in_frame([self.target_last], *map_odom)[0]
