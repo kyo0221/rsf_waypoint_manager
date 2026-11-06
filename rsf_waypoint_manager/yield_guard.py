@@ -4,7 +4,8 @@ import os
 import numpy as np
 import rclpy
 import yaml
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Twist
+from action_msgs.msg import GoalStatus
 from builtin_interfaces.msg import Duration
 from nav2_msgs.action import BackUp, NavigateToPose, Spin
 from rcl_interfaces.msg import Parameter as ParameterMsg, ParameterType, ParameterValue
@@ -132,6 +133,7 @@ class YieldGuard(Node):
         self.nav = ActionClient(self, NavigateToPose, 'navigate_to_pose')
         self.spin = ActionClient(self, Spin, 'spin')
         self.backup = ActionClient(self, BackUp, 'backup')
+        self.reverse_pub = self.create_publisher(Twist, '/cmd_vel_smoothed', 10)
         self.motion, self.unstick_index, self.held = [], None, (0.0, False)
         self.last_backup, self.backup_dist = None, 0.4
         self.create_subscription(Float32, '/waypoint_navigator/speed_override', self.on_override, 10)
@@ -489,9 +491,32 @@ class YieldGuard(Node):
         if not self.backup.wait_for_server(timeout_sec=0.5):
             self.after(0.5, finish)
             return
+        def done(result):
+            # 外形が既に物体に触れていると BackUp は衝突判定で中止する: collision_monitor の手前へ直接後退の速度を出す
+            if result.status == GoalStatus.STATUS_SUCCEEDED:
+                self.after(0.5, finish)
+            else:
+                self.reverse(min(self.backup_dist / 0.1, 12.0), finish)
         self.backup.send_goal_async(goal).add_done_callback(
-            lambda f: f.result().get_result_async().add_done_callback(lambda _: self.after(0.5, finish))
-            if f.result().accepted else self.after(0.5, finish))
+            lambda f: f.result().get_result_async().add_done_callback(lambda r: done(r.result()))
+            if f.result().accepted else self.reverse(min(self.backup_dist / 0.1, 12.0), finish))
+
+    def reverse(self, duration, then):
+        self.get_logger().info(f'backup aborted, reversing directly for {duration:.0f} s')
+        end = self.get_clock().now().nanoseconds * 1e-9 + duration
+        timer = None
+
+        def step():
+            if self.get_clock().now().nanoseconds * 1e-9 < end:
+                cmd = Twist()
+                cmd.linear.x = -0.1
+                self.reverse_pub.publish(cmd)
+                return
+            self.reverse_pub.publish(Twist())
+            timer.cancel()
+            self.destroy_timer(timer)
+            self.after(0.5, then)
+        timer = self.create_timer(0.1, step)
 
     def restart_once(self, index):
         self.restart_timer.cancel()
