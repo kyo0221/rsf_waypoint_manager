@@ -805,17 +805,17 @@ waypoints:
   radius: 0.87
   stop: false
 - x: 416.644
-  y: -39.932
+  y: -40.9
   yaw: 0.474
   radius: 0.87
-  stop: false
+  stop: false  # WP156-158 は朱色路側帯の中 (bag の緑コーンの線と南の固定物の間の真ん中) を通る
 - x: 422.646
-  y: -40.251
+  y: -41.0
   yaw: -0.147
   radius: 1.33
   stop: false
 - x: 429.273
-  y: -40.502
+  y: -41.65
   yaw: 0.216
   radius: 0.87
   stop: false
