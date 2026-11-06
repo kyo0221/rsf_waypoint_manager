@@ -58,3 +58,11 @@ def test_polyline_to_zones_does_not_cross_route():
     for i in range(4):
         for j in range(len(route) - 1):
             assert not seg_cross(pts[i], pts[(i + 1) % 4], route[j], route[j + 1])
+
+
+def test_polyline_to_zones_side_uses_nearest_point_on_route_not_vertex():
+    """WP の間隔が粗くても, 急な短い区間を経路と反対側へ広げる (最寄りの頂点でなく経路の線上の最寄り点で向きを決める)"""
+    from rsf_waypoint_manager.utils.zone_mask import polyline_to_zones
+    zones = polyline_to_zones([(4.0, 1.0), (4.2, 1.5)], [(0.0, 0.0), (10.0, 0.0)], 2.0, 'z')
+    outer = zones[0]['points'][2:]
+    assert all(p[1] > 1.0 for p in outer)

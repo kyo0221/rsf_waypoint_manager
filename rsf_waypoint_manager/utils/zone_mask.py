@@ -28,6 +28,21 @@ def rasterize_zones(zones, resolution, margin, value):
     return ox, oy, width, height, data
 
 
+def nearest_on_route(route, x, y):
+    """経路 (点列をつないだ線) の上で (x, y) に最も近い点"""
+    if len(route) == 1:
+        return route[0]
+    best, bd = route[0], float('inf')
+    for (ax, ay), (bx, by) in zip(route, route[1:]):
+        dx, dy = bx - ax, by - ay
+        t = max(0.0, min(1.0, ((x - ax) * dx + (y - ay) * dy) / max(dx * dx + dy * dy, 1e-12)))
+        px, py = ax + dx * t, ay + dy * t
+        d = (px - x) ** 2 + (py - y) ** 2
+        if d < bd:
+            best, bd = (px, py), d
+    return best
+
+
 def polyline_to_zones(points, route, width, name_prefix):
     """折れ線の各区間を, 経路から遠い側へ width[m] 広げた 4 角形にして返す"""
     zones = []
@@ -38,7 +53,7 @@ def polyline_to_zones(points, route, width, name_prefix):
             continue
         nx, ny = -(by - ay) / length, (bx - ax) / length
         mx, my = (ax + bx) / 2, (ay + by) / 2
-        rx, ry = min(route, key=lambda p: (p[0] - mx) ** 2 + (p[1] - my) ** 2)
+        rx, ry = nearest_on_route(route, mx, my)
         if (rx - mx) * nx + (ry - my) * ny > 0:  # 法線が経路側を向いていたら反転
             nx, ny = -nx, -ny
         zones.append({'name': f'{name_prefix}_{i}', 'type': 'roadway',
