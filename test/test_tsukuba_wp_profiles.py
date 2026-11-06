@@ -36,3 +36,9 @@ def test_hotel_section_wp146_to_169_keeps_road_edge():
     w = load()
     for k in range(146, 170):
         assert profile_at(w, k) == 'road_edge_keep'
+
+
+def test_hotel_section_wp146_to_169_uses_small_radius():
+    """ホテル周辺 (WP146-169) は走行領域が狭いので, waypoint の半径を元 (1.3, 2.0m) の 2/3 にして経路の角を内側へ切らない"""
+    w = load()
+    assert {w[k]['radius'] for k in range(146, 170)} <= {0.87, 1.33}

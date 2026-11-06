@@ -757,122 +757,122 @@ waypoints:
 - x: 467.187
   y: -64.281
   yaw: -3.128
-  radius: 2.0
+  radius: 1.33
   stop: false
 - x: 457.205
   y: -63.83
   yaw: 3.084
-  radius: 2.0
+  radius: 1.33
   stop: false
 - x: 447.231
   y: -63.18
   yaw: 3.045
-  radius: 2.0
+  radius: 1.33
   stop: false
 - x: 437.269
   y: -62.337
   yaw: 3.074
-  radius: 2.0
+  radius: 1.33
   stop: false
 - x: 427.291
   y: -61.781
   yaw: 2.998
-  radius: 2.0
+  radius: 1.33
   stop: false
 - x: 417.349
   y: -61.025
   yaw: 2.991
-  radius: 1.3
+  radius: 0.87
   stop: false
 - x: 415.416
   y: -60.531
   yaw: 2.679
-  radius: 1.3
+  radius: 0.87
   stop: false
 - x: 413.78
   y: -58.932
   yaw: 2.009
-  radius: 1.3
+  radius: 0.87
   stop: false
 - x: 413.583
   y: -53.285
   yaw: 1.504
-  radius: 2.0
+  radius: 1.33
   stop: false
 - x: 414.947
   y: -43.386
   yaw: 1.399
-  radius: 1.3
+  radius: 0.87
   stop: false
 - x: 416.644
   y: -39.932
   yaw: 0.474
-  radius: 1.3
+  radius: 0.87
   stop: false
 - x: 422.646
   y: -40.251
   yaw: -0.147
-  radius: 2.0
+  radius: 1.33
   stop: false
 - x: 429.273
   y: -40.502
   yaw: 0.216
-  radius: 1.3
+  radius: 0.87
   stop: false
 - x: 432.277
   y: -39.083
   yaw: 0.546
-  radius: 1.3
+  radius: 0.87
   stop: false
 - x: 435.426
   y: -35.848
   yaw: 1.146
-  radius: 2.0
+  radius: 1.33
   stop: false
 - x: 436.219
   y: -30.563
   yaw: 1.52
-  radius: 2.0
+  radius: 1.33
   stop: false
 - x: 437.055
   y: -20.607
   yaw: 1.471
-  radius: 2.0
+  radius: 1.33
   stop: false
 - x: 438.106
   y: -10.668
   yaw: 1.478
-  radius: 2.0
+  radius: 1.33
   stop: false
 - x: 438.997
   y: -0.723
   yaw: 1.517
-  radius: 2.0
+  radius: 1.33
   stop: false
 - x: 439.732
   y: 9.244
   yaw: 1.46
-  radius: 2.0
+  radius: 1.33
   stop: false
 - x: 440.561
   y: 19.208
   yaw: 1.461
-  radius: 2.0
+  radius: 1.33
   stop: false
 - x: 441.115
   y: 29.188
   yaw: 1.473
-  radius: 2.0
+  radius: 1.33
   stop: false
 - x: 441.833
   y: 39.161
   yaw: 1.464
-  radius: 2.0
+  radius: 1.33
   stop: false
 - x: 443.152
   y: 44.557
   yaw: 0.857
-  radius: 1.3
+  radius: 0.87
   stop: false
   profile: road_edge_keep
 - x: 445.218
