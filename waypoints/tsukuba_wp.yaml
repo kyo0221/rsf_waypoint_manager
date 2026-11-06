@@ -468,8 +468,8 @@ waypoints:
 - x: 287.999
   y: 187.193
   yaw: 1.523
-  radius: 1.3
-  stop: false
+  radius: 0.85
+  stop: true  # 信号あり横断 (往路) の停止線1. 歩道の植え込みの北端付近
   profile: following
 - x: 288.35
   y: 192.157
@@ -638,11 +638,11 @@ waypoints:
   yaw: -1.674
   radius: 1.3
   stop: false
-- x: 493.096
-  y: 132.594
+- x: 493.39
+  y: 134.4
   yaw: -1.788
   radius: 0.85
-  stop: true
+  stop: true  # 脇道の横断 (往路) の道路端の手前. 北側の道路端 y=134.2 付近
 - x: 492.054
   y: 125.834
   yaw: -1.575
@@ -945,11 +945,11 @@ waypoints:
   yaw: 1.491
   radius: 1.3
   stop: false
-- x: 492.625
-  y: 120.226
+- x: 492.81
+  y: 122.6
   yaw: 1.517
   radius: 0.85
-  stop: true
+  stop: true  # 脇道の横断 (復路) の道路端の手前. 南側の道路端 y=123.0 付近
 - x: 493.628
   y: 133.187
   yaw: 1.425
@@ -1089,11 +1089,11 @@ waypoints:
   radius: 1.3
   stop: false
   profile: following
-- x: 315.513
-  y: 199.533
+- x: 320.2
+  y: 199.37
   yaw: -3.01
   radius: 0.85
-  stop: true
+  stop: true  # 信号あり横断 (復路) の停止線2. 北側の植え込みの西端の 1.5m 西
 - x: 312.557
   y: 199.511
   yaw: -2.743
@@ -1108,8 +1108,8 @@ waypoints:
 - x: 305.062
   y: 194.088
   yaw: -2.912
-  radius: 1.3
-  stop: false
+  radius: 0.85
+  stop: true  # 信号あり横断 (復路) の道路端2. 横断歩道の東端 x=303.4-304.3 の手前
 - x: 302.212
   y: 193.563
   yaw: -3.073
@@ -1165,16 +1165,16 @@ waypoints:
   yaw: -1.664
   radius: 1.3
   stop: false
-- x: 282.331
-  y: 119.713
+- x: 282.35
+  y: 120.0
   yaw: -1.624
-  radius: 1.3
-  stop: false
+  radius: 0.85
+  stop: true  # 交番前の脇道の横断 (復路) の道路端の手前. 北側の道路端 y=119.6 付近
 - x: 281.865
   y: 115.649
   yaw: -1.703
-  radius: 0.85
-  stop: true
+  radius: 1.3
+  stop: false
 - x: 281.552
   y: 109.756
   yaw: -1.586
@@ -1337,11 +1337,11 @@ waypoints:
   yaw: 2.768
   radius: 2.0
   stop: false
-- x: 85.246
-  y: 64.874
+- x: 84.47
+  y: 65.2
   yaw: 2.705
   radius: 0.85
-  stop: true
+  stop: true  # 横断歩道2 (復路) の道路端の手前
 - x: 79.514
   y: 67.295
   yaw: 2.715
@@ -1362,11 +1362,11 @@ waypoints:
   yaw: -2.987
   radius: 2.0
   stop: false
-- x: 50.529
-  y: 71.511
+- x: 51.81
+  y: 72.01
   yaw: -2.795
   radius: 0.85
-  stop: true
+  stop: true  # 横断歩道1 (復路) の道路端の手前. 旧位置は横断歩道の上だった
   profile: default
 - x: 44.836
   y: 69.059
