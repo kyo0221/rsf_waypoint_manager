@@ -3,7 +3,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
@@ -64,6 +64,37 @@ def generate_launch_description():
         output='screen',
     )
 
+    def roadside_nodes(context):
+        wp = LaunchConfiguration('waypoints_file').perform(context)
+        zones = wp[:-len('_wp.yaml')] + '_roadside_zones.yaml' if wp.endswith('_wp.yaml') else ''
+        sim = LaunchConfiguration('use_sim_time')
+        return [
+            Node(
+                package='rsf_waypoint_manager',
+                executable='keepout_zone_mask',
+                name='keepout_zone_mask',
+                parameters=[{
+                    'zones_file': zones,
+                    'mask_topic': '/roadside_filter_mask',
+                    'soft_mask_topic': '/roadside_soft_filter_mask',
+                    'use_sim_time': sim,
+                }],
+                output='screen',
+            ),
+            Node(
+                package='rsf_waypoint_manager',
+                executable='no_refuge_zone_editor',
+                name='roadside_zone_editor',
+                parameters=[{
+                    'zones_file': zones,
+                    'server_name': 'roadside_zone_editor',
+                    'fill_color': [1.0, 0.3, 0.0, 0.35],
+                    'use_sim_time': sim,
+                }],
+                output='screen',
+            ),
+        ]
+
     return LaunchDescription([
         waypoints_file_arg,
         profiles_file_arg,
@@ -72,4 +103,5 @@ def generate_launch_description():
         queue_guard_node,
         yield_guard_node,
         zone_editor_node,
+        OpaqueFunction(function=roadside_nodes),
     ])

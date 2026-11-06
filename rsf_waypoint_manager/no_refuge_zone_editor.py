@@ -19,15 +19,20 @@ class NoRefugeZoneEditor(Node):
     """退避禁止の範囲を rviz に出し, 4 隅のドラッグで編集して yaml に保存する"""
 
     def __init__(self):
-        super().__init__('no_refuge_zone_editor')
+        super().__init__('no_refuge_zone_editor')  # ノード名は launch の name で変える
         self.declare_parameter('waypoints_file', '')
         self.declare_parameter('no_refuge_zones_file', '')
-        self.path = zones_file_for(self.get_parameter('waypoints_file').value,
-                                   self.get_parameter('no_refuge_zones_file').value)
+        self.declare_parameter('zones_file', '')  # 指定があれば no_refuge_zones_file より優先
+        self.declare_parameter('server_name', 'no_refuge_zone_editor')
+        self.declare_parameter('fill_color', [-1.0])  # RGBA. 3 要素未満なら type ごとの色
+        self.path = self.get_parameter('zones_file').value or zones_file_for(
+            self.get_parameter('waypoints_file').value, self.get_parameter('no_refuge_zones_file').value)
+        server_name = self.get_parameter('server_name').value
+        self.fill_color = [float(v) for v in self.get_parameter('fill_color').value]
         self.zones, self.mtime = [], None
         self.pub = self.create_publisher(
-            MarkerArray, '~/zones', QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
-        self.server = InteractiveMarkerServer(self, 'no_refuge_zone_editor')
+            MarkerArray, f'/{server_name}/zones', QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
+        self.server = InteractiveMarkerServer(self, server_name)
         self.reload(force=True)
         self.create_timer(1.0, self.reload)
 
@@ -51,11 +56,11 @@ class NoRefugeZoneEditor(Node):
         self.server.clear()
         for zi, zone in enumerate(self.zones):
             for ci, (x, y) in enumerate(zone['points']):
-                self.server.insert(self.make_handle(zi, ci, x, y, zone['type']), feedback_callback=self.on_feedback)
+                self.server.insert(self.make_handle(zi, ci, x, y, zone['type'], self.fill_color), feedback_callback=self.on_feedback)
         self.server.applyChanges()
 
     @staticmethod
-    def make_handle(zi, ci, x, y, kind):
+    def make_handle(zi, ci, x, y, kind, fill_color=()):
         marker = InteractiveMarker()
         marker.header.frame_id = 'map'
         marker.name = f'{zi}_{ci}'
@@ -70,7 +75,7 @@ class NoRefugeZoneEditor(Node):
         sphere = Marker()
         sphere.type = Marker.SPHERE
         sphere.scale.x = sphere.scale.y = sphere.scale.z = 0.5
-        r, g, b = COLORS.get(kind, (1.0, 1.0, 1.0))
+        r, g, b = fill_color[:3] if len(fill_color) >= 3 else COLORS.get(kind, (1.0, 1.0, 1.0))
         sphere.color = ColorRGBA(r=r, g=g, b=b, a=1.0)
         control.markers.append(sphere)
         marker.controls.append(control)
@@ -82,8 +87,9 @@ class NoRefugeZoneEditor(Node):
         clear.action = Marker.DELETEALL
         array.markers.append(clear)
         for zi, zone in enumerate(self.zones):
-            r, g, b = COLORS.get(zone['type'], (1.0, 1.0, 1.0))
-            for ns, kind, a in (('fill', Marker.TRIANGLE_LIST, 0.25), ('outline', Marker.LINE_STRIP, 1.0)):
+            r, g, b = self.fill_color[:3] if len(self.fill_color) >= 3 else COLORS.get(zone['type'], (1.0, 1.0, 1.0))
+            fill_a = self.fill_color[3] if len(self.fill_color) >= 4 else 0.25
+            for ns, kind, a in (('fill', Marker.TRIANGLE_LIST, fill_a), ('outline', Marker.LINE_STRIP, 1.0)):
                 m = Marker()
                 m.header.frame_id = 'map'
                 m.ns, m.id, m.type, m.action = ns, zi, kind, Marker.ADD
