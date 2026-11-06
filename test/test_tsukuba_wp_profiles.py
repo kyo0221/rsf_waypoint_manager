@@ -16,3 +16,16 @@ def test_following_starts_at_wp10_not_wp9():
     w = load()
     assert 'profile' not in w[9]
     assert w[10].get('profile') == 'following'
+
+
+def profile_at(w, k):
+    """WP k へ向かう区間に効くプロファイル (k から逆にたどって最初に付いているもの)"""
+    return next((w[i]['profile'] for i in range(k, -1, -1) if 'profile' in w[i]), 'default')
+
+
+def test_pole_gates_on_wp112_to_115_use_poles_profile():
+    """WP112->113 と WP114->115 のポールの門 (x 465, 484) も, 歩行者側へ回り込まず門の真ん中を通す"""
+    w = load()
+    for k in (113, 114, 115):
+        assert profile_at(w, k) == 'road_edge_keep_poles'
+    assert profile_at(w, 116) == 'road_edge_keep'
