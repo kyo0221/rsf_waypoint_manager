@@ -1,13 +1,13 @@
 waypoints:
-- x: 24.808
-  y: 3.303
-  yaw: 3.065
+- x: 14.329030990600586
+  y: 3.215608596801758
+  yaw: 3.0650000139124183
   radius: 2.0
   stop: false
-  profile: wide_road  # 確認走行区間 WP0-9: 広い舗装. 遅いロボットは追い越す
-- x: 14.834
-  y: 3.982
-  yaw: 3.068
+  profile: wide_road
+- x: 9.860809326171875
+  y: 4.187224388122559
+  yaw: 3.0679999949206653
   radius: 2.0
   stop: false
 - x: 4.87
@@ -25,19 +25,19 @@ waypoints:
   yaw: 2.913
   radius: 2.0
   stop: false
-- x: -14.74
-  y: 7.845
-  yaw: 2.617
+- x: -15.626416206359863
+  y: 6.170064449310303
+  yaw: 2.61699998127088
   radius: 2.0
   stop: false
-- x: -17.927
-  y: 11.13
-  yaw: 2.044
+- x: -19.20737648010254
+  y: 10.341794967651367
+  yaw: 2.0440000057481034
   radius: 2.0
   stop: false
-- x: -19.109
-  y: 16.318
-  yaw: 1.677
+- x: -19.995410919189453
+  y: 16.12094497680664
+  yaw: 1.6769999716533386
   radius: 2.0
   stop: false
 - x: -19.985
@@ -45,59 +45,58 @@ waypoints:
   yaw: 1.954
   radius: 2.0
   stop: false
-- x: -22.976
-  y: 25.104
-  yaw: 2.583
+- x: -22.723960876464844
+  y: 25.334692001342773
+  yaw: 2.7554287076271486
   radius: 1.3
   stop: false
-- x: -25.453
-  y: 26.047
-  yaw: 2.95
+- x: -25.3651065826416
+  y: 26.303821563720703
+  yaw: 3.1413808037842696
   radius: 1.3
   stop: false
-  profile: following  # WP10-18: 両側が芝生の細い通路. 追い越さず追従し, 塞がれたら待つ (WP9 で付けると WP9 で止まり続けたので WP10 から)
-- x: -32.763
-  y: 26.62
-  yaw: 3.045
-  radius: 1.3
+  profile: following_center
+- x: -36.2617073059082
+  y: 27.698999404907227
+  yaw: 2.7949999243028913
+  radius: 0.7588661193847663
   stop: false
-- x: -36.861
-  y: 27.373
-  yaw: 2.795
-  radius: 1.3
-  stop: false
-- x: -39.021
-  y: 29.226
-  yaw: 2.42
-  radius: 1.3
+- x: -39.36894226074219
+  y: 30.077104568481445
+  yaw: 2.4200000494469807
+  radius: 0.7194469451904304
   stop: false
 - x: -41.696
   y: 30.508
   yaw: 2.811
   radius: 1.3
   stop: false
-- x: -50.986
-  y: 34.106
-  yaw: 2.723
+- x: -54.86388397216797
+  y: 37.794898986816406
+  yaw: 3.1378357407819664
   radius: 2.0
   stop: false
-- x: -55.827
-  y: 36.443
-  yaw: 2.87
-  radius: 2.0
+- x: -57.94276809692383
+  y: 37.77289962768555
+  yaw: -2.689695791762994
+  radius: 1.3116989135742188
   stop: false
-- x: -60.414
-  y: 36.681
-  yaw: -3.05
+- x: -60.63840103149414
+  y: 36.6708869934082
+  yaw: -3.0500000149007067
   radius: 1.3
   stop: false
-  profile: following
-- x: -66.628
-  y: 36.16
-  yaw: 2.937
-  radius: 1.3
+  profile: following_center
+- x: -63.87147521972656
+  y: 36.12907791137695
+  yaw: -3.050000037135419
+  radius: 0.7510231018066378
   stop: false
-  profile: following  # WP16-18 は固定物に挟まれた狭い隙間. ここで障害物層を戻すと, 隙間にいる前走で塞がれたと見て来た道を戻る大回りの経路を引く. 開けた WP19 まで追従
+- x: -66.77859497070312
+  y: 36.557899475097656
+  yaw: -3.05000004454699
+  radius: 0.7510231018066378
+  stop: false
 - x: -69.083
   y: 38.526
   yaw: 1.748
@@ -319,7 +318,7 @@ waypoints:
   yaw: -0.085
   radius: 2.0
   stop: false
-- x: 157.20
+- x: 157.2
   y: 57.37
   yaw: -0.133
   radius: 0.85
@@ -340,7 +339,7 @@ waypoints:
   radius: 2.0
   stop: false
 - x: 185.61
-  y: 54.40
+  y: 54.4
   yaw: 0.044
   radius: 0.85
   stop: true
@@ -469,9 +468,9 @@ waypoints:
   y: 187.193
   yaw: 1.523
   radius: 0.85
-  stop: true  # 信号あり横断 (往路) の停止線1. 歩道の植え込みの北端付近
+  stop: true
   profile: following
-- x: 288.40
+- x: 288.4
   y: 192.86
   yaw: 1.044
   radius: 0.85
@@ -591,7 +590,7 @@ waypoints:
   yaw: -0.107
   radius: 2.0
   stop: false
-  profile: road_edge_keep_poles  # WP112-115 のポールの門 (x 465, 484) も真ん中を通す. road_edge_keep だと歩行者側を回る
+  profile: road_edge_keep_poles
 - x: 480.342
   y: 185.73
   yaw: -0.02
@@ -643,7 +642,7 @@ waypoints:
   y: 132.75
   yaw: -1.788
   radius: 0.85
-  stop: true  # 脇道の横断 (往路) の停止点. 北側の低層ポール列 (y=133.7 付近) を過ぎて約 1m (公式画像に合わせる)
+  stop: true
 - x: 492.054
   y: 125.834
   yaw: -1.575
@@ -808,7 +807,7 @@ waypoints:
   y: -40.9
   yaw: 0.474
   radius: 0.87
-  stop: false  # WP156-158 は朱色路側帯の中 (bag の緑コーンの線と南の固定物の間の真ん中) を通る
+  stop: false
 - x: 422.646
   y: -41.0
   yaw: -0.147
@@ -950,7 +949,7 @@ waypoints:
   y: 122.6
   yaw: 1.517
   radius: 0.85
-  stop: true  # 脇道の横断 (復路) の道路端の手前. 南側の道路端 y=123.0 付近
+  stop: true
 - x: 493.628
   y: 133.187
   yaw: 1.425
@@ -1094,7 +1093,7 @@ waypoints:
   y: 199.37
   yaw: -3.01
   radius: 0.85
-  stop: true  # 信号あり横断 (復路) の停止線2. 北側の植え込みの西端の 1.5m 西
+  stop: true
 - x: 312.557
   y: 199.511
   yaw: -2.743
@@ -1110,7 +1109,7 @@ waypoints:
   y: 194.088
   yaw: -2.912
   radius: 0.85
-  stop: true  # 信号あり横断 (復路) の道路端2. 横断歩道の東端 x=303.4-304.3 の手前
+  stop: true
 - x: 302.212
   y: 193.563
   yaw: -3.073
@@ -1170,7 +1169,7 @@ waypoints:
   y: 120.0
   yaw: -1.624
   radius: 0.85
-  stop: true  # 交番前の脇道の横断 (復路) の道路端の手前. 北側の道路端 y=119.6 付近
+  stop: true
 - x: 281.865
   y: 115.649
   yaw: -1.703
@@ -1342,7 +1341,7 @@ waypoints:
   y: 65.2
   yaw: 2.705
   radius: 0.85
-  stop: true  # 横断歩道2 (復路) の道路端の手前
+  stop: true
 - x: 79.514
   y: 67.295
   yaw: 2.715
@@ -1367,7 +1366,7 @@ waypoints:
   y: 72.01
   yaw: -2.795
   radius: 0.85
-  stop: true  # 横断歩道1 (復路) の道路端の手前. 旧位置は横断歩道の上だった
+  stop: true
   profile: default
 - x: 44.836
   y: 69.059
@@ -1409,9 +1408,9 @@ waypoints:
   yaw: -1.255
   radius: 1.3
   stop: false
-- x: 40.041
-  y: 4.334
-  yaw: -0.481
+- x: 37.609676361083984
+  y: 2.1458516120910645
+  yaw: -0.4810000027735579
   radius: 1.3
   stop: false
 - x: 46.566
