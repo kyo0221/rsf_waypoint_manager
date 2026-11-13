@@ -127,7 +127,7 @@ class WaypointSystem:
                         continue
                     self.profiles.apply(self.profiles.profile_for(index))
                     position = self.robot_position()
-                    self.profiles.approach = self.approach_speed(position)
+                    self.profiles.approach = self.approach_speed(index, position)
                     self.check_entered(index, position)
             else:
                 self.profiles.approach = 0.0
@@ -174,8 +174,9 @@ class WaypointSystem:
             return None
         return transform.transform.translation.x, transform.transform.translation.y
 
-    def approach_speed(self, position):
-        if position is None:
+    def approach_speed(self, index, position):
+        # 周回コースでは始点が終点の近くにあるので, 終点に向かう時だけ減速する
+        if position is None or index != self.goal_end_index:
             return 0.0
         waypoint = self.waypoints[self.goal_end_index]
         distance = math.hypot(waypoint['x'] - position[0], waypoint['y'] - position[1]) - waypoint['radius']
