@@ -585,15 +585,16 @@ def oncoming_for_machine(oncoming, state, robot_xy, zones):
     return bool(oncoming)
 
 
-def passing_oncoming(lane, robot_s, robot_l, tracks, ahead, lateral, min_speed):
+def passing_oncoming(lane, robot_s, robot_l, tracks, ahead, lateral, min_speed, min_hits=0, min_travel=0.0, min_ahead=-1.0):
     """前方 ahead[m] 以内・横 lateral[m] 以内を min_speed[m/s] 以上でこちらへ向かってくる track があれば True (すれ違い中)"""
     for tr in tracks:
-        if not tr.reliable:
+        if not tr.reliable or tr.hits < min_hits:
             continue
         s, lat = lane.project(tr.x, tr.y)
-        if not -1.0 <= s - robot_s <= ahead or abs(lat - robot_l) > lateral:
+        if not min_ahead <= s - robot_s <= ahead or abs(lat - robot_l) > lateral:
             continue
         h = lane.heading(s)
-        if -(tr.vx * math.cos(h) + tr.vy * math.sin(h)) >= min_speed:
+        closing = -(tr.vx * math.cos(h) + tr.vy * math.sin(h))
+        if closing >= min_speed and closing * tr.span >= min_travel:
             return True
     return False

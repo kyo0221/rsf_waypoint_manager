@@ -236,7 +236,9 @@ class YieldGuard(Node):
         # 向かってくる物体とすれ違う間 (前方 4m・横 1.5m 以内) は減速させる (速度の上限はプロファイル管理が決める)
         robot_l = lane.project(rx, ry)[1]
         for tr in tracks:
-            if passing_oncoming(lane, robot_s, robot_l, [tr], 4.0, 1.5, 0.2):
+            # 経路脇の静止物の重心のずれを向かってくる物体とみなさない
+            if passing_oncoming(lane, robot_s, robot_l, [tr], 4.0, 1.5, self.get_parameter('min_speed').value,
+                                self.get_parameter('min_hits').value, self.get_parameter('min_travel').value, 0.5):
                 self.passing_ids[tr.id] = now
         # 一度向かってきた物体は止まっても 15 秒は覚えておく (止まった相手の横を加速して抜けないため)
         self.passing_ids = {i: t for i, t in self.passing_ids.items() if now - t < 15.0}

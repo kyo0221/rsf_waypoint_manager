@@ -775,3 +775,33 @@ def test_split_obstacles_keeps_static_points_for_stall_check():
     assert len(dyn_xy) == 0 and len(dyn_z) == 0
     assert not blocked_ahead(dyn_xy, (0.0, 0.0, 0.0), 0.9, 0.65)
     assert blocked_ahead(stall_xy, (0.0, 0.0, 0.0), 0.9, 0.65)
+
+
+STRICT = dict(min_speed=0.3, min_hits=3, min_travel=0.6, min_ahead=0.5)
+
+
+def test_passing_oncoming_ignores_slow_short_travel_track():
+    # 経路脇の静止物の重心のずれ (遅く・近づいた距離も短い) はすれ違いとみなさない
+    from rsf_waypoint_manager.yield_logic import passing_oncoming
+    tr = Track(id=1, x=13.0, y=0.5, vx=-0.25, vy=0.0, t=0.0, hits=5, reliable=True, span=1.4)
+    assert not passing_oncoming(straight_lane(), 10.0, 0.0, [tr], 4.0, 1.5, **STRICT)
+
+
+def test_passing_oncoming_accepts_fast_track_with_strict_params():
+    from rsf_waypoint_manager.yield_logic import passing_oncoming
+    tr = Track(id=1, x=13.0, y=0.0, vx=-1.0, vy=0.0, t=0.0, hits=10, reliable=True, span=1.0)
+    assert passing_oncoming(straight_lane(), 10.0, 0.0, [tr], 4.0, 1.5, **STRICT)
+
+
+def test_passing_oncoming_min_hits_excludes_young_track():
+    from rsf_waypoint_manager.yield_logic import passing_oncoming
+    tr = Track(id=1, x=13.0, y=0.0, vx=-1.0, vy=0.0, t=0.0, hits=2, reliable=True, span=1.0)
+    assert not passing_oncoming(straight_lane(), 10.0, 0.0, [tr], 4.0, 1.5, 0.3, min_hits=3)
+    assert passing_oncoming(straight_lane(), 10.0, 0.0, [tr], 4.0, 1.5, 0.3, min_hits=0)
+
+
+def test_passing_oncoming_min_ahead_excludes_beside_robot():
+    from rsf_waypoint_manager.yield_logic import passing_oncoming
+    tr = Track(id=1, x=10.2, y=0.8, vx=-1.0, vy=0.0, t=0.0, hits=10, reliable=True, span=1.0)
+    assert not passing_oncoming(straight_lane(), 10.0, 0.0, [tr], 4.0, 1.5, 0.3, min_ahead=0.5)
+    assert passing_oncoming(straight_lane(), 10.0, 0.0, [tr], 4.0, 1.5, 0.3)
