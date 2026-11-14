@@ -27,6 +27,7 @@ setup(
             'yield_guard = rsf_waypoint_manager.yield_guard:main',
             'no_refuge_zone_editor = rsf_waypoint_manager.no_refuge_zone_editor:main',
             'keepout_zone_mask = rsf_waypoint_manager.keepout_zone_mask:main',
+            'logging_simulator = rsf_waypoint_manager.logging_simulator:main',
         ],
     },
 )
